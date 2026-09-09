@@ -1,0 +1,10 @@
+/* ซ่อน Scrollbar สำหรับ Chrome, Safari และ Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ซ่อน Scrollbar สำหรับ IE, Edge และ Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

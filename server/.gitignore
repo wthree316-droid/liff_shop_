@@ -1,0 +1,13 @@
+# environment variables & secrets
+.env.*
+.env
+!.env.example
+
+#virtual environment
+venv/
+.venv/
+doc/
+
+# bin is used for virtualenv on Windows
+__pycache__/
+.pytest_cache/
