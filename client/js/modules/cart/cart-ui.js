@@ -8,12 +8,15 @@ let appliedPromoData = null;
 
 // Helper คำนวณราคาตาม Tier
 function getItemPrice(item) {
-  const { product, quantityOrWeight } = item;
-  if (product.type === 'BY_WEIGHT' && Array.isArray(product.price_tiers) && product.price_tiers.length > 0) {
-    const sorted = [...product.price_tiers].sort((a, b) => b.min_weight - a.min_weight);
-    const match = sorted.find((t) => quantityOrWeight >= t.min_weight);
-    const unitPrice = match ? match.price_per_unit : product.price_per_unit;
-    return quantityOrWeight * unitPrice;
+  const { product, quantityOrWeight, selectedVariant } = item;
+  if (product.type === 'BY_WEIGHT' && Array.isArray(product.price_tiers)) {
+    // ค้นหาจาก label หรือค่าน้ำหนักที่ตรงกับบล็อก
+    const tier = product.price_tiers.find(
+      (t) => t.label === selectedVariant || Number(t.weight) === Number(quantityOrWeight)
+    );
+    if (tier) {
+      return Number(tier.price);
+    }
   }
   return quantityOrWeight * product.price_per_unit;
 }
@@ -25,7 +28,31 @@ export function initCartDrawer() {
   cartState.subscribe(() => {
     renderDrawerItems();
     updateOrderSummary();
+    updateFloatingCartBar();
   });
+}
+
+function updateFloatingCartBar() {
+  const bar = document.getElementById('floating-cart-bar');
+  if (!bar) return;
+
+  const items = cartState.getItems();
+  if (items.length === 0) {
+    bar.classList.add('hidden');
+    return;
+  }
+
+  bar.classList.remove('hidden');
+
+  // คำนวณจำนวนชิ้นและยอดเงินรวมทั้งหมด
+  const totalCount = items.reduce((sum, item) => sum + (item.count || 1), 0);
+  const totalAmount = items.reduce((sum, item) => sum + (getItemPrice(item) * (item.count || 1)), 0);
+
+  const countEl = document.getElementById('cart-item-count');
+  const priceEl = document.getElementById('cart-total-price');
+
+  if (countEl) countEl.textContent = totalCount;
+  if (priceEl) priceEl.textContent = `฿${totalAmount.toFixed(2)}`;
 }
 
 function createCartDrawerDOM() {
@@ -164,7 +191,10 @@ function updateOrderSummary() {
   const freeThreshold = Number(settings.free_shipping_threshold) || 500;
   const baseShippingFee = Number(settings.shipping_fee) || 40;
 
-  const subtotal = items.reduce((sum, item) => sum + getItemPrice(item), 0);
+  const subtotal = items.reduce((sum, item) => {
+  const count = item.count || 1;
+  return sum + (getItemPrice(item) * count);
+}, 0);
   
   // Progress Bar ส่งฟรี
   const progressText = document.getElementById('shipping-progress-text');
@@ -231,23 +261,27 @@ function renderDrawerItems() {
     .map((item, index) => {
       const isWeight = item.product.type === 'BY_WEIGHT';
       const unit = isWeight ? 'g' : 'ชิ้น';
+      const count = item.count || 1;
       const variantText = item.selectedVariant ? `• ${item.selectedVariant}` : '';
-      const lineTotal = getItemPrice(item);
+      const lineTotal = getItemPrice(item) * count;
 
       return `
-      <div class="flex items-center justify-between bg-stone-50 border border-stone-200/70 p-3 rounded-2xl">
-        <div class="flex-1 min-w-0 pr-2">
-          <p class="text-xs font-bold text-stone-900 truncate">${item.product.name}</p>
-          <p class="text-[11px] text-stone-500 font-medium">${item.quantityOrWeight}${unit} ${variantText}</p>
+        <div class="flex items-center justify-between bg-stone-50 border border-stone-200/70 p-3 rounded-2xl">
+          <div class="flex-1 min-w-0 pr-2">
+            <p class="text-xs font-bold text-stone-900 truncate">${item.product.name}</p>
+            <p class="text-[11px] text-stone-500 font-medium">
+              ${item.quantityOrWeight}${unit} ${variantText} 
+              <span class="text-amber-700 font-bold ml-1">x ${count}</span>
+            </p>
+          </div>
+          <div class="text-right shrink-0 flex items-center gap-3">
+            <span class="text-xs font-bold text-stone-900 font-mono">฿${lineTotal.toFixed(2)}</span>
+            <button data-index="${index}" class="btn-remove-item text-xs text-stone-400 hover:text-red-500 font-medium transition-colors">
+              ✕
+            </button>
+          </div>
         </div>
-        <div class="text-right shrink-0 flex items-center gap-3">
-          <span class="text-xs font-bold text-stone-900 font-mono">฿${lineTotal.toFixed(2)}</span>
-          <button data-index="${index}" class="btn-remove-item text-xs text-stone-400 hover:text-red-500 font-medium transition-colors">
-            ✕
-          </button>
-        </div>
-      </div>
-    `;
+      `;
     })
     .join('');
 
@@ -264,7 +298,9 @@ async function handleValidatePromotion() {
   const code = document.getElementById('input-promo-code').value.trim().toUpperCase();
   const msgEl = document.getElementById('promo-status-msg');
   const items = cartState.getItems();
-  const subtotal = items.reduce((sum, item) => sum + getItemPrice(item), 0);
+  const subtotal = items.reduce((sum, item) => {
+    return sum + (getItemPrice(item) * (item.count || 1));
+  }, 0);
 
   if (!code) {
     appliedPromoData = null;
@@ -300,6 +336,18 @@ async function handleOrderSubmission() {
   const promoCode = document.getElementById('input-promo-code').value.trim().toUpperCase();
   const items = cartState.getItems();
 
+  // เพิ่มการตรวจขั้นต่ำใน handleOrderSubmission ก่อนส่ง API
+  const settings = getStoreSettings();
+  const minOrderAmount = Number(settings.min_order_amount) || 100; // กำหนดขั้นต่ำ (บาท)
+
+  const currentSubtotal = items.reduce((sum, item) => sum + (getItemPrice(item) * (item.count || 1)), 0);
+
+  if (currentSubtotal < minOrderAmount) {
+    errorMsg.textContent = `ยอดสั่งซื้อขั้นต่ำของทางร้านคือ ฿${minOrderAmount.toFixed(2)} (ยอดปัจจุบัน ฿${currentSubtotal.toFixed(2)})`;
+    errorMsg.classList.remove('hidden');
+    return;
+  }
+  
   errorMsg.classList.add('hidden');
 
   if (items.length === 0) {
@@ -328,7 +376,8 @@ async function handleOrderSubmission() {
     items: items.map((item) => ({
       product_id: item.product.id,
       quantity_or_weight: item.quantityOrWeight,
-      selected_variant: item.selectedVariant
+      selected_variant: item.selectedVariant,
+      count: item.count || 1
     })),
     promo_code: promoCode || null
   };

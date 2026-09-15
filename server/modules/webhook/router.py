@@ -9,14 +9,14 @@ from modules.webhook.webhook_service import (
     upload_slip_to_storage,
     find_pending_order,
     update_order_slip,
-    send_reply_message,
-    process_text_message
+    send_reply_message
 )
+from modules.webhook.automation.bot_router import dispatch_text_message
+from modules.webhook.notifications.order_alerts import notify_admins_new_slip
 
 router = APIRouter(prefix="/webhook", tags=["LINE Webhook"])
 
 def verify_line_signature(body: bytes, signature: Optional[str]) -> bool:
-    """ตรวจสอบความถูกต้องของลายเซ็น HMAC-SHA256 จาก LINE"""
     if not settings.LINE_CHANNEL_SECRET or not signature:
         return False
     hash_calc = hmac.new(
@@ -27,7 +27,6 @@ def verify_line_signature(body: bytes, signature: Optional[str]) -> bool:
     return hmac.compare_digest(base64.b64encode(hash_calc).decode("utf-8"), signature)
 
 async def handle_slip_event(event: dict):
-    """ประมวลผลเมื่อลูกค้าส่งรูปสลิปเข้ามา"""
     user_id = event.get("source", {}).get("userId")
     message = event.get("message", {})
     message_id = message.get("id")
@@ -46,18 +45,22 @@ async def handle_slip_event(event: dict):
 
     try:
         image_bytes = await download_line_image(message_id)
-        slip_url = upload_slip_to_storage(image_bytes, str(order["id"]))
-        update_order_slip(str(order["id"]), slip_url)
-
-        order_id_short = str(order["id"])[:8]
+        order_id = str(order["id"])
         grand_total = float(order.get("grand_total", 0.0))
-        
+
+        slip_url = upload_slip_to_storage(image_bytes, order_id)
+        update_order_slip(order_id, slip_url)
+
+        order_id_short = order_id[:8]
         reply_text = (
             f"ได้รับหลักฐานการโอนเงินสำหรับคำสั่งซื้อ #{order_id_short} เรียบร้อยแล้วครับ! ✨\n\n"
             f"ยอดชำระ: ฿{grand_total:.2f}\n"
             "ทางร้านจะรีบตรวจสอบยอดเงินและเตรียมจัดส่งสินค้าให้โดยเร็วที่สุดครับ ขอบคุณครับ 🍵"
         )
         await send_reply_message(reply_token, reply_text)
+
+        # ส่ง Push Notification ไปสะกิดแอดมินทันที
+        await notify_admins_new_slip(order_id, grand_total, slip_url)
     except Exception as e:
         print(f"Error handling slip message: {e}")
         await send_reply_message(
@@ -66,13 +69,12 @@ async def handle_slip_event(event: dict):
         )
 
 async def handle_text_event(event: dict):
-    """ประมวลผลข้อความแชท (FAQ / คำสั่งสลับ Rich Menu / เช็กสถานะ)"""
     user_id = event.get("source", {}).get("userId")
     reply_token = event.get("replyToken")
     text = event.get("message", {}).get("text", "")
 
     if user_id and reply_token and text:
-        await process_text_message(user_id, reply_token, text)
+        await dispatch_text_message(user_id, reply_token, text)
 
 @router.post("/line", status_code=status.HTTP_200_OK)
 async def line_webhook(

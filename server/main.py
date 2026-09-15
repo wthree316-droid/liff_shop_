@@ -51,6 +51,9 @@ css_dir = os.path.join(client_dir, "css")
 if os.path.exists(css_dir):
     app.mount("/css", StaticFiles(directory=css_dir), name="css")
 
+assets_dir = os.path.join(client_dir, "assets")
+if os.path.exists(assets_dir):
+    app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():

@@ -1,5 +1,5 @@
 import { cartState } from '../../core/state.js';
-import { getStoreSettings } from '../../core/store-settings.js';
+import { CONFIG } from '../../core/config.js';
 
 let allProducts = [];
 let activeCategory = 'ALL';
@@ -11,6 +11,24 @@ export function initCatalog(products, containerElement, tabContainer) {
 }
 
 function setupCategoryFilter(tabContainer, containerElement) {
+  // สร้างรายการแท็บทั้งหมด รวมแท็บ "ทั้งหมด" เข้ากับ CONFIG.CATEGORIES[cite: 8]
+  const tabs = [
+    { id: 'ALL', name: 'ทั้งหมด' },
+    ...CONFIG.CATEGORIES.map(c => ({ id: c.id, name: c.name }))
+  ];
+
+  tabContainer.innerHTML = tabs.map((t, idx) => `
+    <button 
+      data-category="${t.id}" 
+      class="px-4 py-1.5 rounded-full text-xs transition-all active:scale-95 ${
+        idx === 0
+          ? 'font-semibold bg-stone-900 text-white shadow-xs'
+          : 'font-medium bg-white border border-stone-200 text-stone-600'
+      }">
+      ${t.name}
+    </button>
+  `).join('');
+
   const buttons = tabContainer.querySelectorAll('button');
   buttons.forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -24,13 +42,6 @@ function setupCategoryFilter(tabContainer, containerElement) {
       renderCatalog(containerElement);
     });
   });
-}
-
-function calculateUnitPrice(weight, tiers, defaultPrice) {
-  if (!tiers || tiers.length === 0) return defaultPrice;
-  const sorted = [...tiers].sort((a, b) => b.min_weight - a.min_weight);
-  const matched = sorted.find((t) => weight >= t.min_weight);
-  return matched ? matched.price_per_unit : defaultPrice;
 }
 
 export function renderCatalog(containerElement) {
@@ -51,74 +62,109 @@ export function renderCatalog(containerElement) {
   }
 
   filtered.forEach((product) => {
-    const card = document.createElement('div');
-    card.className = 'bg-white rounded-3xl border border-stone-200/80 p-4 shadow-xs hover:shadow-md transition-shadow duration-200 space-y-3.5';
+  const card = document.createElement('div');
+  card.className = 'bg-white rounded-3xl border border-stone-200/80 p-4 shadow-xs hover:shadow-md transition-shadow duration-200 space-y-3.5';
 
-    const defaultImg = 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=300&q=80';
-    const isWeight = product.type === 'BY_WEIGHT';
+  const defaultImg = 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=300&q=80';
+  const isWeight = product.type === 'BY_WEIGHT';
 
-    card.innerHTML = `
-      <div class="flex gap-3.5">
-        <div class="relative w-20 h-20 rounded-2xl overflow-hidden bg-stone-100 shrink-0 border border-stone-100">
-          <img src="${product.image_url || defaultImg}" alt="${product.name}" class="w-full h-full object-cover" />
-          <span class="absolute bottom-1 right-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-md ${isWeight ? 'bg-emerald-950/70 text-emerald-300' : 'bg-stone-900/70 text-stone-200'}">
-            ${isWeight ? 'ชั่งกรัม' : 'ชิ้น'}
-          </span>
-        </div>
-        <div class="flex-1 min-w-0 flex flex-col justify-center">
-          <h3 class="text-sm font-bold text-stone-900 truncate leading-snug">${product.name}</h3>
-          <p class="text-xs text-stone-500 mt-1 font-mono">
-            ฿${product.price_per_unit.toFixed(2)} <span class="text-[10px] text-stone-400">/ ${isWeight ? 'กรัม' : 'ชิ้น'}</span>
-          </p>
-        </div>
+  // คำนวณราคาเริ่มต้นก่อนสร้าง HTML String
+  const startingPrice = isWeight && Array.isArray(product.price_tiers) && product.price_tiers.length > 0
+    ? Math.min(...product.price_tiers.map(t => Number(t.price)))
+    : product.price_per_unit;
+
+  card.innerHTML = `
+    <div class="product-clickable flex gap-3.5">
+      <div class="relative w-20 h-20 rounded-2xl overflow-hidden bg-stone-100 shrink-0 border border-stone-100">
+        <img src="${product.image_url || defaultImg}" alt="${product.name}" class="w-full h-full object-cover" />
+        <span class="absolute bottom-1 right-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-md ${isWeight ? 'bg-emerald-950/70 text-emerald-300' : 'bg-stone-900/70 text-stone-200'}">
+          ${isWeight ? 'ชั่งกรัม' : 'ชิ้น'}
+        </span>
       </div>
-      <div class="action-area border-t border-stone-100 pt-3"></div>
-    `;
+      <div class="flex-1 min-w-0 flex flex-col justify-center">
+        <h3 class="text-sm font-bold text-stone-900 truncate leading-snug">${product.name}</h3>
+        <p class="text-xs text-stone-500 mt-1 font-mono">
+          ${isWeight ? 'เริ่มต้น ' : ''}฿${Number(startingPrice).toFixed(2)} 
+          <span class="text-[10px] text-stone-400">/ ${isWeight ? 'แพ็กเกจ' : 'ชิ้น'}</span>
+        </p>
+      </div>
+    </div>
+    <div class="action-area border-t border-stone-100 pt-3"></div>
+  `;
 
-    const actionArea = card.querySelector('.action-area');
+  const actionArea = card.querySelector('.action-area');
 
-    if (isWeight) {
-      renderWeightControls(product, actionArea);
-    } else {
-      renderPieceControls(product, actionArea);
-    }
+  if (isWeight) {
+    renderWeightControls(product, actionArea);
+  } else {
+    renderPieceControls(product, actionArea);
+  }
 
-    containerElement.appendChild(card);
+  const clickableArea = card.querySelector('.product-clickable');
+  clickableArea.classList.add('cursor-pointer');
+  clickableArea.addEventListener('click', () => {
+    openProductDetailModal(product);
   });
+
+  containerElement.appendChild(card);
+});
+}
+
+function openProductDetailModal(product) {
+  const modal = document.getElementById('product-detail-modal');
+  if (!modal) return;
+
+  const defaultImg = 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=300&q=80';
+  const isWeight = product.type === 'BY_WEIGHT';
+
+  document.getElementById('detail-prod-img').src = product.image_url || defaultImg;
+  document.getElementById('detail-prod-name').textContent = product.name;
+  document.getElementById('detail-prod-badge').textContent = isWeight ? 'ชั่งกรัม' : 'ชิ้น';
+  document.getElementById('detail-prod-desc').textContent = product.description || 'ไม่มีคำอธิบายสินค้า';
+
+  const actionArea = document.getElementById('detail-action-area');
+  actionArea.innerHTML = '';
+
+  // ใช้งานชุดควบคุมราคาและปุ่มใส่ตะกร้าเดิมที่มีอยู่แล้ว
+  if (isWeight) {
+    renderWeightControls(product, actionArea);
+  } else {
+    renderPieceControls(product, actionArea);
+  }
+
+  // ผูกปุ่มปิด Modal
+  const btnClose = document.getElementById('btn-close-detail-modal');
+  btnClose.onclick = () => modal.close();
+
+  modal.showModal();
 }
 
 function renderWeightControls(product, container) {
-  const settings = getStoreSettings();
-  const minGrams = Number(settings.min_weight_grams) || 50;
-  
-  // กำหนดปุ่มพรีเซ็ตอิงจากค่าน้ำหนักขั้นต่ำของร้าน
-  let selectedWeight = minGrams;
-  const tiers = product.price_tiers || [];
+  // ดึงรายการแพ็กเกจที่ตั้งไว้ หรือใช้ค่าเริ่มต้นหากไม่มี
+  const tiers = Array.isArray(product.price_tiers) && product.price_tiers.length > 0
+    ? product.price_tiers
+    : [{ label: 'ขนาดมาตรฐาน', weight: 50, price: product.price_per_unit }];
 
-  // สร้างค่าพรีเซ็ตน้ำหนักแบบยืดหยุ่น เช่น [min, min*2, min*4]
-  const presetOptions = [minGrams, minGrams * 25, minGrams * 50, minGrams * 100].filter((v, i, a) => a.indexOf(v) === i);
+  let selectedTier = tiers[0];
 
   container.innerHTML = `
     <div class="space-y-3">
-      <div class="flex items-center gap-1.5 quick-weights">
-        ${presetOptions.map((w, idx) => `
-          <button type="button" data-val="${w}" class="btn-preset px-2.5 py-1.5 text-xs rounded-xl border font-semibold transition-all active:scale-95 ${
-            idx === 0 
-              ? 'bg-stone-900 text-white border-stone-900 shadow-xs' 
+      <div class="flex items-center gap-1.5 flex-wrap weight-tier-group">
+        ${tiers.map((t, idx) => `
+          <button type="button" data-idx="${idx}" class="btn-tier px-3 py-1.5 text-xs rounded-xl border font-semibold transition-all active:scale-95 ${
+            idx === 0
+              ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
               : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
-          }">${w}g</button>
+          }">
+            ${t.label || `${t.weight}g`} (฿${Number(t.price).toFixed(0)})
+          </button>
         `).join('')}
-        
-        <div class="flex-1 flex items-center bg-stone-50 border border-stone-200 rounded-xl px-2.5 py-1 focus-within:border-stone-400 transition-colors">
-          <input type="number" min="${minGrams}" step="5" value="${selectedWeight}" class="custom-gram w-full bg-transparent text-xs text-right font-bold text-stone-800 focus:outline-none" />
-          <span class="text-[11px] text-stone-400 ml-1 font-medium">g</span>
-        </div>
       </div>
 
-      <div class="flex items-center justify-between pt-0.5">
+      <div class="flex items-center justify-between pt-0.5 border-t border-stone-100">
         <div>
-          <span class="text-[10px] text-stone-400 block font-medium">เรตราคา (<span class="unit-rate text-amber-700 font-bold font-mono">฿0/g</span>)</span>
-          <span class="price-display text-sm font-bold text-stone-900 font-mono tracking-tight">฿0.00</span>
+          <span class="text-[10px] text-stone-400 block font-medium">ราคาแพ็กเกจ</span>
+          <span class="tier-price-display text-sm font-bold text-amber-700 font-mono">฿${Number(selectedTier.price).toFixed(2)}</span>
         </div>
         <button class="btn-add-cart bg-stone-900 hover:bg-stone-800 active:scale-95 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-xs">
           ใส่ตะกร้า
@@ -127,56 +173,30 @@ function renderWeightControls(product, container) {
     </div>
   `;
 
-  const customInput = container.querySelector('.custom-gram');
-  const priceDisplay = container.querySelector('.price-display');
-  const unitRateDisplay = container.querySelector('.unit-rate');
-  const presetBtns = container.querySelectorAll('.btn-preset');
+  const tierBtns = container.querySelectorAll('.btn-tier');
+  const priceDisplay = container.querySelector('.tier-price-display');
   const addBtn = container.querySelector('.btn-add-cart');
 
-  const updateWeight = (grams) => {
-    selectedWeight = Number(grams) || 0;
-    customInput.value = selectedWeight;
+  tierBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const idx = Number(btn.dataset.idx);
+      selectedTier = tiers[idx];
 
-    const currentRate = calculateUnitPrice(selectedWeight, tiers, product.price_per_unit);
-    const lineTotal = selectedWeight * currentRate;
+      tierBtns.forEach((b) => {
+        b.className = 'btn-tier px-3 py-1.5 text-xs rounded-xl border font-semibold bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100 transition-all active:scale-95';
+      });
+      btn.className = 'btn-tier px-3 py-1.5 text-xs rounded-xl border font-semibold bg-stone-900 text-white border-stone-900 shadow-xs transition-all active:scale-95';
 
-    unitRateDisplay.textContent = `฿${currentRate.toFixed(2)}/g`;
-    priceDisplay.textContent = `฿${lineTotal.toFixed(2)}`;
-
-    presetBtns.forEach((b) => {
-      const match = Number(b.dataset.val) === selectedWeight;
-      b.className = match
-        ? 'btn-preset px-2.5 py-1.5 text-xs rounded-xl border font-semibold bg-stone-900 text-white border-stone-900 shadow-xs transition-all active:scale-95'
-        : 'btn-preset px-2.5 py-1.5 text-xs rounded-xl border font-semibold bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100 transition-all active:scale-95';
+      priceDisplay.textContent = `฿${Number(selectedTier.price).toFixed(2)}`;
     });
-
-    if (selectedWeight < minGrams) {
-      priceDisplay.textContent = `ขั้นต่ำ ${minGrams} กรัม`;
-      priceDisplay.classList.add('text-red-500');
-      addBtn.disabled = true;
-      addBtn.classList.add('opacity-40', 'cursor-not-allowed');
-    } else {
-      priceDisplay.classList.remove('text-red-500');
-      addBtn.disabled = false;
-      addBtn.classList.remove('opacity-40', 'cursor-not-allowed');
-    }
-  };
-
-  presetBtns.forEach((btn) => {
-    btn.addEventListener('click', () => updateWeight(btn.dataset.val));
-  });
-
-  customInput.addEventListener('input', (e) => {
-    updateWeight(e.target.value);
   });
 
   addBtn.addEventListener('click', () => {
-    if (selectedWeight < minGrams) return;
-    cartState.addItem(product, selectedWeight, null);
+    // บันทึกน้ำหนักและชื่อแพ็กเกจลง State ของตะกร้า
+    const variantLabel = selectedTier.label || `${selectedTier.weight}g`;
+    cartState.addItem(product, selectedTier.weight, variantLabel);
     showAddedFeedback(addBtn);
   });
-
-  updateWeight(selectedWeight);
 }
 
 function renderPieceControls(product, container) {

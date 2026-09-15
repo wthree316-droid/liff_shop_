@@ -6,6 +6,7 @@ class OrderItemPayload(BaseModel):
     product_id: str
     quantity_or_weight: float = Field(gt=0, description="กรัม หรือ จำนวนชิ้น")
     selected_variant: Optional[str] = None
+    count: int = Field(default=1, ge=1, description="จำนวนแพ็กเกจหรือชิ้นที่สั่งซื้อ")
 
 class CustomerPayload(BaseModel):
     name: str = Field(min_length=1)
@@ -27,6 +28,16 @@ class CreateOrderRequest(BaseModel):
     items: List[OrderItemPayload] = Field(min_length=1)
     promo_code: Optional[str] = None
 
+# โมเดลรายการสินค้าสำหรับส่งกลับไปให้ LIFF วาด Flex Message
+class OrderItemSummaryResponse(BaseModel):
+    product_id: str
+    product_name: str
+    selected_variant: Optional[str] = None
+    quantity_or_weight: float
+    package_count: int = 1
+    unit_price_applied: float
+    line_total: float
+
 class OrderSummaryResponse(BaseModel):
     order_id: str
     subtotal: float
@@ -36,3 +47,4 @@ class OrderSummaryResponse(BaseModel):
     applied_promo_code: Optional[str] = None
     status: str
     message: str
+    items: List[OrderItemSummaryResponse] = Field(default_factory=list)  # <-- เพิ่มฟิลด์นี้

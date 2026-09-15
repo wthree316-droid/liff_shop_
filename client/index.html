@@ -16,7 +16,7 @@
   <!-- Header -->
   <header class="sticky top-0 z-30 bg-stone-900 text-stone-100 px-4 py-3 shadow-md flex items-center justify-between">
     <div>
-      <h1 class="text-lg font-semibold tracking-wide">Art shop</h1>
+      <h1 class="text-lg font-semibold tracking-wide">Weed shop</h1>
       <p class="text-xs text-stone-400">คัดสรรกัญชาและอุปกรณ์</p>
     </div>
     <div id="user-badge" class="text-xs bg-stone-800 border border-stone-700 rounded-full px-3 py-1 text-stone-300">
@@ -41,10 +41,6 @@
     <!-- 2. หมวดหมู่สินค้า (Category Tabs) -->
     <section>
       <div class="flex gap-2 overflow-x-auto no-scrollbar py-1" id="category-tabs">
-        <button class="px-4 py-1.5 rounded-full text-xs font-medium bg-stone-900 text-white shadow-sm" data-category="ALL">ทั้งหมด</button>
-        <button class="px-4 py-1.5 rounded-full text-xs font-medium bg-white border border-stone-200 text-stone-600" data-category="cat_weight">ชั่งกรัม</button>
-        <button class="px-4 py-1.5 rounded-full text-xs font-medium bg-white border border-stone-200 text-stone-600" data-category="cat_pack">แพ็ค</button>
-        <button class="px-4 py-1.5 rounded-full text-xs font-medium bg-white border border-stone-200 text-stone-600" data-category="cat_gear">อุปกรณ์</button>
       </div>
     </section>
 
@@ -92,6 +88,36 @@
         <button id="btn-copy-code" class="text-xs bg-stone-200 hover:bg-stone-300 text-stone-700 px-3 py-1.5 rounded-lg font-medium">คัดลอก</button>
       </div>
       <button id="btn-close-modal" class="w-full py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-semibold">ปิดหน้าต่าง</button>
+    </div>
+  </dialog>
+
+  <!-- Modal: ดูรายละเอียดสินค้าเต็มจอ -->
+  <dialog id="product-detail-modal" class="w-full h-full max-w-none max-h-none m-0 p-0 bg-transparent backdrop:bg-stone-900/80">
+    <div class="min-h-screen bg-stone-50 flex flex-col justify-between max-w-md mx-auto">
+      <!-- ภาพสินค้าขนาดใหญ่ & ปุ่มปิด -->
+      <div class="relative w-full h-72 bg-stone-100 shrink-0">
+        <img id="detail-prod-img" src="" alt="" class="w-full h-full object-cover" />
+        <button type="button" id="btn-close-detail-modal" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-stone-900/60 backdrop-blur-md text-white flex items-center justify-center text-lg font-bold">
+          &times;
+        </button>
+        <span id="detail-prod-badge" class="absolute bottom-3 left-4 text-xs font-bold px-2.5 py-1 rounded-lg backdrop-blur-md bg-stone-900/70 text-white"></span>
+      </div>
+
+      <!-- รายละเอียดสินค้า -->
+      <div class="flex-1 p-5 space-y-4 overflow-y-auto">
+        <div>
+          <h2 id="detail-prod-name" class="text-xl font-bold text-stone-900"></h2>
+          <p id="detail-prod-price" class="text-base font-mono font-bold text-amber-700 mt-1"></p>
+        </div>
+
+        <div class="border-t border-stone-200/60 pt-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-1">รายละเอียดสินค้า</h3>
+          <p id="detail-prod-desc" class="text-xs text-stone-600 leading-relaxed whitespace-pre-line"></p>
+        </div>
+
+        <!-- พื้นที่เลือกขนาด/ตัวเลือกใน Modal -->
+        <div id="detail-action-area" class="border-t border-stone-200/60 pt-3"></div>
+      </div>
     </div>
   </dialog>
 

@@ -19,9 +19,9 @@ CUSTOMER_MENU_PAYLOAD = {
     "name": "Customer Storefront Menu",
     "chatBarText": "สั่งซื้อออนไลน์",
     "areas": [
-        # ฝั่งซ้ายใหญ่: ปุ่มเปิด LIFF สั่งซื้อสินค้า
+        # ด้านบนใหญ่: ปุ่มเปิด LIFF สั่งซื้อสินค้า
         {
-            "bounds": {"x": 0, "y": 0, "width": 1666, "height": 1686},
+            "bounds": {"x": 0, "y": 0, "width": 2500, "height": 843},
             "action": {
                 "type": "uri",
                 "label": "สั่งซื้อสินค้า",
@@ -30,20 +30,20 @@ CUSTOMER_MENU_PAYLOAD = {
         },
         # ขวาบน: เช็กสถานะคำสั่งซื้อ
         {
-            "bounds": {"x": 1667, "y": 0, "width": 833, "height": 843},
+            "bounds": {"x": 0, "y": 843, "width": 1248, "height": 843},
             "action": {
                 "type": "message",
                 "label": "เช็กสถานะ",
                 "text": "เช็กสถานะออเดอร์"
             }
         },
-        # ขวาล่าง: วิธีชงชา / สอบถาม
+        # ขวาล่าง:
         {
-            "bounds": {"x": 1667, "y": 844, "width": 833, "height": 842},
+            "bounds": {"x": 1254, "y": 843, "width": 1248, "height": 843},
             "action": {
                 "type": "message",
-                "label": "วิธีชงชา",
-                "text": "วิธีชงชา"
+                "label": "ติดตามพัสดุ",
+                "text": "พัสดุ"
             }
         }
     ]
@@ -62,7 +62,7 @@ ADMIN_MENU_PAYLOAD = {
             "action": {
                 "type": "uri",
                 "label": "Admin Dashboard",
-                "uri": f"https://liff.line.me/{settings.LINE_ADMIN_LIFF_ID}/admin.html"
+                "uri": f"https://liff.line.me/{settings.LINE_ADMIN_LIFF_ID}"
             }
         },
         # ขวาบน: ดูสรุปออเดอร์รอจัดส่ง

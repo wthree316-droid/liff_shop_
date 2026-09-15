@@ -1,10 +1,9 @@
 import { CONFIG } from './config.js';
 
 let cachedSettings = {
-  min_weight_grams: 50,
-  min_weight_price: 50,
   free_shipping_threshold: 500,
-  shipping_fee: 40
+  shipping_fee: 50,
+  min_order_amount: 100
 };
 
 export async function loadStoreSettings() {

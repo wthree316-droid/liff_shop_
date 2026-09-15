@@ -1,0 +1,50 @@
+import { uploadAdminAsset } from './admin-api.js';
+
+/**
+ * จัดการอัปโหลดรูปภาพไปยัง Supabase Storage ผ่าน Backend API
+ */
+export async function handleImageUpload(fileInput, hiddenInputId) {
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  const labelEl = fileInput.previousElementSibling;
+  const originalText = labelEl ? labelEl.textContent : '';
+
+  if (labelEl) {
+    labelEl.textContent = 'กำลังอัปโหลดรูปภาพ... ⏳';
+  }
+
+  try {
+    const data = await uploadAdminAsset(file);
+    document.getElementById(hiddenInputId).value = data.image_url;
+
+    if (labelEl) {
+      labelEl.textContent = 'อัปโหลดรูปภาพสำเร็จแล้ว ✓';
+    }
+  } catch (err) {
+    alert(`เกิดข้อผิดพลาดในการอัปโหลดรูป: ${err.message}`);
+    if (labelEl) {
+      labelEl.textContent = originalText;
+    }
+    fileInput.value = '';
+  }
+}
+
+/**
+ * ผูก Event Listener ให้กับช่องเลือกไฟล์สินค้าและโปรโมชั่น
+ */
+export function setupAssetUploads() {
+  const prodFileInput = document.getElementById('prod-file-input');
+  if (prodFileInput) {
+    prodFileInput.addEventListener('change', (e) => {
+      handleImageUpload(e.target, 'prod-image');
+    });
+  }
+
+  const promoFileInput = document.getElementById('promo-file-input');
+  if (promoFileInput) {
+    promoFileInput.addEventListener('change', (e) => {
+      handleImageUpload(e.target, 'promo-banner');
+    });
+  }
+}

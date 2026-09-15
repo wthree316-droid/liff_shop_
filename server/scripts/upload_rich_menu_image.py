@@ -48,14 +48,14 @@ def main():
         upload_image(
             client, 
             settings.LINE_CUSTOMER_RICH_MENU_ID, 
-            "customer_menu.png"
+            "customer_menu.jpg"
         )
 
         # 2. อัปโหลดภาพเมนูแอดมิน
         upload_image(
             client, 
             settings.LINE_ADMIN_RICH_MENU_ID, 
-            "admin_menu.png"
+            "admin_menu.jpg"
         )
     print("--- เสร็จสิ้นขั้นตอนการอัปโหลด ---")
 

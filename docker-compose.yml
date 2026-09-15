@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  artisan-shop:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: artisan_ecommerce_app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - server/.env
+    environment:
+      - PORT=8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/products"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

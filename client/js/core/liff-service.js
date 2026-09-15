@@ -7,32 +7,33 @@ class LiffService {
     this.isInitialized = false;
   }
 
-  async init() {
-    if (this.isInitialized) return this.profile;
+  // แก้ไขใน client/js/core/liff-service.js
+async init() {
+  if (this.isInitialized) return this.profile;
 
-    try {
-      if (typeof liff === 'undefined') {
-        console.warn('LINE LIFF SDK not loaded. Running in standalone browser mode.');
-        return null;
-      }
-
-      await liff.init({ liffId: CONFIG.LIFF_ID });
-      this.isInitialized = true;
-      this.isInClient = liff.isInClient();
-
-      if (liff.isLoggedIn()) {
-        this.profile = await liff.getProfile();
-        return this.profile;
-      } else {
-        // บังคับล็อกอินหากยังไม่ได้ Auth เพื่อดึง userId เสมอ
-        liff.login();
-        return null;
-      }
-    } catch (error) {
-      console.error('LIFF Init Error:', error);
+  try {
+    if (typeof liff === 'undefined') {
+      console.warn('LINE LIFF SDK not loaded. Running in standalone browser mode.');
       return null;
     }
+
+    await liff.init({ liffId: CONFIG.LIFF_ID });
+    this.isInitialized = true;
+    this.isInClient = liff.isInClient();
+
+    if (!liff.isLoggedIn()) {
+      liff.login({ redirectUri: window.location.origin });
+      return null;
+    }
+
+    // โหลด Profile ไว้ใช้งาน
+    this.profile = await liff.getProfile();
+    return this.profile;
+  } catch (error) {
+    console.error('LIFF Init Error:', error);
+    return null;
   }
+}
 
   getUserId() {
     return this.profile ? this.profile.userId : null;

@@ -92,18 +92,16 @@
       <h3 id="prod-modal-title" class="text-sm font-bold">เพิ่มสินค้าใหม่</h3>
       <input type="text" id="prod-id" required placeholder="Product ID (เช่น tea-05)" class="w-full px-3 py-2 border rounded-xl text-xs disabled:bg-stone-100" />
       <input type="text" id="prod-name" required placeholder="ชื่อสินค้า" class="w-full px-3 py-2 border rounded-xl text-xs" />
+      <textarea id="prod-desc" rows="2" placeholder="คำอธิบาย/รายละเอียดสินค้า" class="w-full px-3 py-2 border rounded-xl text-xs"></textarea>
       <div class="grid grid-cols-2 gap-2">
         <select id="prod-cat" class="w-full px-3 py-2 border rounded-xl text-xs">
-          <option value="cat_weight">cat_weight (ชั่ง)</option>
-          <option value="cat_pack">cat_pack (แพ็ค)</option>
-          <option value="cat_gear">cat_gear (อุปกรณ์)</option>
         </select>
-        <select id="prod-type" class="w-full px-3 py-2 border rounded-xl text-xs">
-          <option value="BY_WEIGHT">BY_WEIGHT (ชั่ง)</option>
-          <option value="PER_PIECE">PER_PIECE (ชิ้น)</option>
+        <select id="prod-type" disabled class="w-full px-3 py-2 border rounded-xl text-xs">
+          <option value="BY_WEIGHT">ชั่ง</option>
+          <option value="PER_PIECE">ชิ้น</option>
         </select>
       </div>
-      <input type="number" id="prod-price" required step="0.01" placeholder="ราคาต่อหน่วย / กรัม (price_per_unit)" class="w-full px-3 py-2 border rounded-xl text-xs" />
+      <input type="number" id="prod-price" step="0.01" placeholder="ราคาต่อหน่วย / กรัม (price_per_unit)" class="w-full px-3 py-2 border rounded-xl text-xs" />
       
       <div>
         <label class="text-[11px] text-stone-500 block mb-1">รูปภาพสินค้า</label>
@@ -112,13 +110,21 @@
       </div>
       <input type="text" id="prod-variants" placeholder="ตัวเลือกสินค้า เช่น สีดำ, สีขาว (คั่นด้วยจุลภาค)" class="w-full px-3 py-2 border rounded-xl text-xs" />
       
-      <!-- ราคาขั้นบันได -->
-      <div id="tier-container" class="space-y-1.5 p-3 bg-stone-50 rounded-xl border border-stone-200">
+      <!-- แทนที่บล็อก #tier-container ใน modal-product ของ admin.html -->
+      <div id="tier-container" class="space-y-2 p-3 bg-stone-50 rounded-xl border border-stone-200">
         <div class="flex justify-between items-center">
-          <label class="text-[11px] font-bold text-stone-700">ราคาขั้นบันได</label>
-          <span class="text-[10px] text-stone-400">นน.ขั้นต่ำ : ราคา/กรัม</span>
+          <div>
+            <label class="text-[11px] font-bold text-stone-700">บล็อกขนาดและราคาขาย</label>
+            <span class="text-[10px] text-stone-400 block">กำหนดขนาดแพ็กเกจพร้อมราคาตายตัว</span>
+          </div>
+          <button type="button" id="btn-add-tier-row" class="px-2.5 py-1 text-[11px] bg-stone-900 text-white font-bold rounded-lg hover:bg-stone-800 transition-all">
+            + เพิ่มขนาด
+          </button>
         </div>
-        <textarea id="prod-tiers-input" rows="3" placeholder="ตัวอย่าง:&#10;1:30&#10;25:25&#10;50:20&#10;100:15" class="w-full px-3 py-2 border rounded-xl text-xs font-mono"></textarea>
+
+        <div id="tier-rows-list" class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+          <!-- แถวตัวอย่างจะถูก Inject ด้วย JavaScript -->
+        </div>
       </div>
 
       <div class="flex gap-2 justify-end pt-2">
@@ -173,6 +179,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="./js/admin/admin-ui.js"></script>
+  <script type="module" src="./js/admin/admin-main.js"></script>
 </body>
 </html>

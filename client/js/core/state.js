@@ -8,28 +8,25 @@ class CartState {
     return this.items;
   }
 
-  addItem(product, quantityOrWeight, selectedVariant = null) {
-    const existingIndex = this.items.findIndex(
-      (item) => item.product.id === product.id && item.selectedVariant === selectedVariant
-    );
+addItem(product, quantityOrWeight, selectedVariant = null, packageCount = 1) {
+  const existingIndex = this.items.findIndex(
+    (item) => item.product.id === product.id && item.selectedVariant === selectedVariant
+  );
 
-    if (existingIndex > -1) {
-      // ถ้าเป็นนับชิ้น ให้บวกทบยอดเดิม แต่ถ้าเป็นชั่งน้ำหนักให้เปลี่ยนค่าน้ำหนักใหม่
-      if (product.type === 'PER_PIECE') {
-        this.items[existingIndex].quantityOrWeight += Number(quantityOrWeight);
-      } else {
-        this.items[existingIndex].quantityOrWeight = Number(quantityOrWeight);
-      }
-    } else {
-      this.items.push({
-        product,
-        quantityOrWeight: Number(quantityOrWeight),
-        selectedVariant
-      });
-    }
-
-    this.notify();
+  if (existingIndex > -1) {
+    // ไม่ว่าจะเป็นชิ้นเดี่ยวหรือแพ็กเกจไซส์ตายตัว หากกดไซส์เดิมซ้ำให้บวกจำนวนชิ้น (count) เพิ่ม
+    this.items[existingIndex].count = (this.items[existingIndex].count || 1) + packageCount;
+  } else {
+    this.items.push({
+      product,
+      quantityOrWeight: Number(quantityOrWeight),
+      selectedVariant,
+      count: packageCount
+    });
   }
+
+  this.notify();
+}
 
   removeItem(productId, selectedVariant = null) {
     this.items = this.items.filter(

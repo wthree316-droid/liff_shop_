@@ -30,13 +30,45 @@ VALID_TRANSITIONS = {
 }
 
 def fetch_orders(status_filter: Optional[str] = None) -> List[Dict[str, Any]]:
-    query = supabase.table("orders").select("*").order("created_at", desc=True)
+    # Join ตาราง order_items เข้ามาพร้อมกัน
+    query = supabase.table("orders").select("*, order_items(*)").order("created_at", desc=True)
     if status_filter:
         query = query.eq("status", status_filter)
     res = query.execute()
     orders = cast(List[Dict[str, Any]], res.data or [])
-    return [
-        {
+
+    formatted_orders = []
+    for o in orders:
+        raw_slip_url = o.get("slip_image_url")
+        signed_slip_url = raw_slip_url
+
+        if raw_slip_url:
+            try:
+                filename = raw_slip_url.split("/")[-1].split("?")[0]
+                signed_res = supabase.storage.from_("slips").create_signed_url(filename, 600)
+                if isinstance(signed_res, dict) and "signedURL" in signed_res:
+                    signed_slip_url = signed_res["signedURL"]
+                elif isinstance(signed_res, str):
+                    signed_slip_url = signed_res
+            except Exception as e:
+                print(f"Warning: สร้าง Signed URL ไม่สำเร็จสำหรับออเดอร์ {o.get('id')}: {e}")
+
+        # จัดฟอร์แมตรายการสินค้าในบิล
+        items = []
+        raw_items = o.get("order_items") or []
+        for item in raw_items:
+            pkg_cnt = item.get("package_count")
+            items.append({
+                "product_id": item.get("product_id"),
+                "product_name": item.get("product_name") or "สินค้าไม่ระบุชื่อ",
+                "selected_variant": item.get("selected_variant"),
+                "quantity_or_weight": float(item.get("quantity_or_weight") or 0),
+                "package_count": int(pkg_cnt) if pkg_cnt is not None else 1,
+                "unit_price_applied": float(item.get("unit_price_applied") or 0),
+                "line_total": float(item.get("line_total") or 0)
+            })
+
+        formatted_orders.append({
             "id": o["id"],
             "line_user_id": o.get("line_user_id"),
             "customer_name": o.get("customer_name", ""),
@@ -49,10 +81,12 @@ def fetch_orders(status_filter: Optional[str] = None) -> List[Dict[str, Any]]:
             "grand_total": float(o.get("grand_total", 0.0)),
             "status": o.get("status", ""),
             "tracking_number": o.get("tracking_number"),
-            "slip_image_url": o.get("slip_image_url"),
-            "created_at": o.get("created_at", "")
-        } for o in orders
-    ]
+            "slip_image_url": signed_slip_url,
+            "created_at": o.get("created_at", ""),
+            "items": items  # <-- ส่งรายการสินค้าไปให้หน้า Admin UI
+        })
+
+    return formatted_orders
 
 def update_order_status(order_id: str, new_status: str, tracking_number: Optional[str] = None) -> Dict[str, Any]:
     res = supabase.table("orders").select("status").eq("id", order_id).execute()

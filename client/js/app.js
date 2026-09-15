@@ -3,21 +3,9 @@ import { loadStoreSettings } from './core/store-settings.js';
 import { fetchActivePromotions } from './modules/promotion/promotion-api.js';
 import { renderPromotions } from './modules/promotion/promotion-ui.js';
 import { fetchProducts } from './modules/catalog/catalog-api.js';
-import { initCatalog } from './modules/catalog/catalog-ui.js';
+import { initCatalog } from './modules/catalog/catalog-ui.js?v=9999';
 import { initCartDrawer } from './modules/cart/cart-ui.js';
-import { cartState } from './core/state.js';
-import { CONFIG } from './core/config.js'; // <-- ดึง CONFIG มาใช้งาน
-
-// Helper: คำนวณราคาต่อหน่วยกรัม
-function getItemUnitPrice(item) {
-  const { product, quantityOrWeight } = item;
-  if (product.type === 'BY_WEIGHT' && Array.isArray(product.price_tiers) && product.price_tiers.length > 0) {
-    const sorted = [...product.price_tiers].sort((a, b) => b.min_weight - a.min_weight);
-    const match = sorted.find((t) => quantityOrWeight >= t.min_weight);
-    return match ? match.price_per_unit : product.price_per_unit;
-  }
-  return product.price_per_unit;
-}
+import { CONFIG } from './core/config.js'; 
 
 document.addEventListener('DOMContentLoaded', async () => {
   const userBadge = document.getElementById('user-badge');
@@ -77,28 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const productContainer = document.getElementById('product-list');
   const categoryTabs = document.getElementById('category-tabs');
 
-  // Elements แถบ Floating Cart ด้านล่าง
-  const floatingCart = document.getElementById('floating-cart-bar');
-  const cartCountElem = document.getElementById('cart-item-count');
-  const cartPriceElem = document.getElementById('cart-total-price');
-
-  cartState.subscribe((items) => {
-    const totalItems = items.length;
-    if (totalItems > 0 && floatingCart) {
-      floatingCart.classList.remove('hidden');
-      const estimatedTotal = items.reduce((sum, item) => {
-        const unitRate = getItemUnitPrice(item);
-        return sum + item.quantityOrWeight * unitRate;
-      }, 0);
-      
-      if (cartCountElem) cartCountElem.textContent = totalItems;
-      if (cartPriceElem) cartPriceElem.textContent = `฿${estimatedTotal.toFixed(2)}`;
-    } else if (floatingCart) {
-      floatingCart.classList.add('hidden');
-    }
-  });
-
-  // เริ่มต้น Cart Drawer
+  // เริ่มต้น Cart Drawer (ควบคุมทั้ง Drawer และ Floating Cart Bar ภายในตัว)
   initCartDrawer();
 
   // ดึงข้อมูลสินค้าและโปรโมชั่นพร้อมกัน
@@ -108,6 +75,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       fetchProducts()
     ]);
 
+    // ทดสอบดูว่าข้อมูล products เข้ามาเป็น Array หรือไม่
+    // alert(`ดึงสินค้าสำเร็จ: ${products ? products.length : 0} ชิ้น`);
+
     if (promoSlider && promoModal.modal) {
       renderPromotions(promotions, promoSlider, promoModal);
     }
@@ -116,5 +86,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   } catch (error) {
     console.error('Initial load failed:', error);
+    // แจ้งเตือนข้อผิดพลาดขึ้นหน้าจอมือถือตรงๆ
+    alert(`โหลดข้อมูลไม่สำเร็จ: ${error.message || error}`);
   }
 });

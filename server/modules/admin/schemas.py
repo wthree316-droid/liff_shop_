@@ -9,6 +9,15 @@ class UpdateOrderStatusRequest(BaseModel):
     )
     tracking_number: Optional[str] = Field(default=None)
 
+class OrderItemDetailResponse(BaseModel):
+    product_id: Optional[str] = None
+    product_name: str
+    selected_variant: Optional[str] = None
+    quantity_or_weight: float
+    package_count: int = 1
+    unit_price_applied: float
+    line_total: float
+
 class OrderSummaryResponse(BaseModel):
     id: str
     line_user_id: Optional[str] = None
@@ -24,6 +33,7 @@ class OrderSummaryResponse(BaseModel):
     tracking_number: Optional[str] = None
     slip_image_url: Optional[str] = None
     created_at: str
+    items: List[OrderItemDetailResponse] = Field(default_factory=list)
 
 # --- Products (Sync ตรงกับ DB จริง) ---
 class AdminCreateProductRequest(BaseModel):
@@ -33,6 +43,7 @@ class AdminCreateProductRequest(BaseModel):
     name: str
     price_per_unit: float = Field(..., ge=0)
     variants: Optional[List[str]] = Field(default_factory=list)
+    description: Optional[str] = ""
     image_url: Optional[str] = ""
     is_available: bool = True
     price_tiers: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
@@ -44,6 +55,7 @@ class AdminUpdateProductRequest(BaseModel):
     name: Optional[str] = None
     price_per_unit: Optional[float] = None
     variants: Optional[List[str]] = Field(default_factory=list)
+    description: Optional[str] = None
     image_url: Optional[str] = None
     is_available: Optional[bool] = None
     price_tiers: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
