@@ -5,20 +5,11 @@ from core.database import supabase
 from modules.admin.schemas import (
     AdminCreateProductRequest,
     AdminUpdateProductRequest,
-    AdminCreatePromoRequest
+    AdminCreatePromoRequest,
+    AdminUpdatePromoRequest
 )
-
-# --- STORAGE HELPERS ---
-def delete_storage_image_by_url(image_url: Optional[str], bucket_name: str = "products"):
-    """แยกชื่อไฟล์จาก Public URL แล้วสั่งลบออกจาก Supabase Storage Bucket"""
-    if not image_url:
-        return
-    try:
-        filename = image_url.split("/")[-1]
-        if filename:
-            supabase.storage.from_(bucket_name).remove([filename])
-    except Exception as e:
-        print(f"Warning: Failed to delete old image from storage: {e}")
+from core.storage import delete_storage_image_by_url
+from core.time_utils import get_thai_order_time_meta
 
 # --- ORDERS ---
 VALID_TRANSITIONS = {
@@ -67,7 +58,7 @@ def fetch_orders(status_filter: Optional[str] = None) -> List[Dict[str, Any]]:
                 "unit_price_applied": float(item.get("unit_price_applied") or 0),
                 "line_total": float(item.get("line_total") or 0)
             })
-
+        date_key, date_label, time_display = get_thai_order_time_meta(o.get("created_at"))
         formatted_orders.append({
             "id": o["id"],
             "line_user_id": o.get("line_user_id"),
@@ -82,8 +73,13 @@ def fetch_orders(status_filter: Optional[str] = None) -> List[Dict[str, Any]]:
             "status": o.get("status", ""),
             "tracking_number": o.get("tracking_number"),
             "slip_image_url": signed_slip_url,
+            "payment_method": o.get("payment_method", "TRANSFER"),
+            "deposit_amount": float(o.get("deposit_amount", 0.0)),
             "created_at": o.get("created_at", ""),
-            "items": items  # <-- ส่งรายการสินค้าไปให้หน้า Admin UI
+            "date_key": date_key,
+            "date_label": date_label,
+            "time_display": time_display,
+            "items": items  
         })
 
     return formatted_orders
@@ -195,6 +191,27 @@ def toggle_promotion_active(promo_id: str) -> Dict[str, Any]:
     new_val = not rows[0].get("is_active", True)
     res = supabase.table("promotions").update({"is_active": new_val}).eq("id", promo_id).execute()
     return cast(List[Dict[str, Any]], res.data or [])[0]
+
+
+def update_promotion_admin(promo_id: str, data: AdminUpdatePromoRequest) -> Dict[str, Any]:
+    update_data = {k: v for k, v in data.model_dump(mode="json").items() if v is not None}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="ไม่มีข้อมูลที่ต้องการอัปเดต")
+
+    # หากมีการเปลี่ยนรูปแบนเนอร์ใหม่ ให้ลบรูปเก่าออกจาก Storage
+    if "banner_image_url" in update_data:
+        curr_res = supabase.table("promotions").select("banner_image_url").eq("id", promo_id).execute()
+        curr_rows = cast(List[Dict[str, Any]], curr_res.data or [])
+        if curr_rows and curr_rows[0].get("banner_image_url"):
+            old_url = str(curr_rows[0]["banner_image_url"])
+            if old_url != update_data.get("banner_image_url"):
+                delete_storage_image_by_url(old_url, "promotions")
+
+    res = supabase.table("promotions").update(update_data).eq("id", promo_id).execute()
+    rows = cast(List[Dict[str, Any]], res.data or [])
+    if not rows:
+        raise HTTPException(status_code=404, detail="ไม่พบโปรโมชั่น")
+    return rows[0]
 
 def delete_promotion_admin(promo_id: str) -> Dict[str, Any]:
     # ลบรูปแบนเนอร์ออกจาก Storage ก่อนลบข้อมูลโปรโมชั่น

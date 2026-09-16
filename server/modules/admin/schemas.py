@@ -32,7 +32,12 @@ class OrderSummaryResponse(BaseModel):
     status: str
     tracking_number: Optional[str] = None
     slip_image_url: Optional[str] = None
+    payment_method: Optional[str] = "TRANSFER"
+    deposit_amount: Optional[float] = 0.0
     created_at: str
+    date_key: Optional[str] = "unknown"
+    date_label: Optional[str] = ""
+    time_display: Optional[str] = ""
     items: List[OrderItemDetailResponse] = Field(default_factory=list)
 
 # --- Products (Sync ตรงกับ DB จริง) ---
@@ -73,3 +78,13 @@ class AdminCreatePromoRequest(BaseModel):
     banner_image_url: Optional[str] = ""
     is_active: bool = True
 
+
+class AdminUpdatePromoRequest(BaseModel):
+    title: Optional[str] = None
+    discount_type: Optional[str] = Field(None, pattern="^(PERCENTAGE|FIXED_AMOUNT)$")
+    discount_value: Optional[float] = Field(None, gt=0)
+    min_order_amount: Optional[float] = Field(None, ge=0)
+    max_discount_amount: Optional[float] = None
+    description: Optional[str] = None
+    banner_image_url: Optional[str] = None
+    is_active: Optional[bool] = None

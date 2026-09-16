@@ -11,12 +11,14 @@ from modules.admin.schemas import (
     AdminCreateProductRequest,
     AdminUpdateProductRequest,
     AdminCreatePromoRequest,
+    AdminUpdatePromoRequest,
 )
 from modules.admin.admin_service import (
     fetch_orders, update_order_status,
     fetch_all_products_admin, create_product_admin, update_product_admin, toggle_product_availability,
     fetch_all_promotions_admin, create_promotion_admin, toggle_promotion_active,
-    delete_product_admin, 
+    delete_product_admin, update_promotion_admin, 
+
     delete_promotion_admin
 )
 
@@ -118,6 +120,10 @@ def add_promotion(request: AdminCreatePromoRequest):
 @router.patch("/promotions/{promo_id}/toggle", dependencies=[Depends(verify_admin_auth)])
 def toggle_promotion(promo_id: str):
     return toggle_promotion_active(promo_id)
+
+@router.patch("/promotions/{promo_id}", dependencies=[Depends(verify_admin_auth)])
+def update_promo(promo_id: str, payload: AdminUpdatePromoRequest):
+    return update_promotion_admin(promo_id, payload)
 
 @router.delete("/promotions/{promo_id}", dependencies=[Depends(verify_admin_auth)])
 def delete_promotion(promo_id: str):

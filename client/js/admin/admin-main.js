@@ -87,17 +87,20 @@ function setupNavigationTabs() {
   ];
 
   tabs.forEach(({ btn, sec, loader }) => {
-    document.getElementById(btn).addEventListener('click', () => {
+    const elBtn = document.getElementById(btn);
+    if (!elBtn) return;
+
+    elBtn.addEventListener('click', () => {
       tabs.forEach(t => {
-        const elBtn = document.getElementById(t.btn);
-        const elSec = document.getElementById(t.sec);
+        const targetBtn = document.getElementById(t.btn);
+        const targetSec = document.getElementById(t.sec);
         if (t.btn === btn) {
-          elBtn.className = 'tab-nav py-3 border-b-2 border-amber-600 text-amber-600 font-bold';
-          elSec.classList.remove('hidden');
+          targetBtn.className = 'tab-nav flex-1 py-2 rounded-xl text-xs font-bold transition-all text-amber-900 bg-white shadow-xs';
+          targetSec.classList.remove('hidden');
           loader();
         } else {
-          elBtn.className = 'tab-nav py-3 border-b-2 border-transparent text-stone-500 font-medium';
-          elSec.classList.add('hidden');
+          targetBtn.className = 'tab-nav flex-1 py-2 rounded-xl text-xs font-medium transition-all text-stone-500 hover:text-stone-800';
+          targetSec.classList.add('hidden');
         }
       });
     });

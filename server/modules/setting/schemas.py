@@ -1,13 +1,13 @@
-from typing import Dict, Optional
-from pydantic import BaseModel, Field
+from typing import Dict, Optional, Any, Union
+from pydantic import BaseModel
 
 class StoreSettingItem(BaseModel):
     key: str
-    value: float = Field(..., ge=0)
+    value: Any
     description: Optional[str] = None
 
 class StoreSettingsResponse(BaseModel):
-    settings: Dict[str, float]
+    settings: Dict[str, Any]
 
 class UpdateSettingRequest(BaseModel):
-    value: float = Field(..., ge=0)
+    value: Union[float, str]

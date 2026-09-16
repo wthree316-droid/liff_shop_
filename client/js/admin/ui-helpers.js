@@ -3,6 +3,7 @@ import { uploadAdminAsset } from './admin-api.js';
 /**
  * จัดการอัปโหลดรูปภาพไปยัง Supabase Storage ผ่าน Backend API
  */
+
 export async function handleImageUpload(fileInput, hiddenInputId) {
   const file = fileInput.files[0];
   if (!file) return;
@@ -17,6 +18,28 @@ export async function handleImageUpload(fileInput, hiddenInputId) {
   try {
     const data = await uploadAdminAsset(file);
     document.getElementById(hiddenInputId).value = data.image_url;
+
+    // ถ้าเป็นการอัปโหลดรูปสินค้า ให้อัปเดตกล่องพรีวิวทันที
+    if (hiddenInputId === 'prod-image') {
+      const previewImg = document.getElementById('prod-preview-img');
+      const placeholder = document.getElementById('prod-preview-placeholder');
+      if (previewImg && placeholder) {
+        previewImg.src = data.image_url;
+        previewImg.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+      }
+    }
+
+    // ถ้าเป็นการอัปโหลดรูปโปรโมชั่น ให้อัปเดตกล่องพรีวิวทันที
+    if (hiddenInputId === 'promo-banner') {
+      const previewImg = document.getElementById('promo-preview-img');
+      const placeholder = document.getElementById('promo-preview-placeholder');
+      if (previewImg && placeholder) {
+        previewImg.src = data.image_url;
+        previewImg.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+      }
+    }
 
     if (labelEl) {
       labelEl.textContent = 'อัปโหลดรูปภาพสำเร็จแล้ว ✓';

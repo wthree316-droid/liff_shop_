@@ -6,7 +6,7 @@ class OrderItemPayload(BaseModel):
     product_id: str
     quantity_or_weight: float = Field(gt=0, description="กรัม หรือ จำนวนชิ้น")
     selected_variant: Optional[str] = None
-    count: int = Field(default=1, ge=1, description="จำนวนแพ็กเกจหรือชิ้นที่สั่งซื้อ")
+    count: int = Field(default=1, ge=1, description="จำนวนแพ็กเกจหรือชิ้น")
 
 class CustomerPayload(BaseModel):
     name: str = Field(min_length=1)
@@ -27,8 +27,16 @@ class CreateOrderRequest(BaseModel):
     customer: CustomerPayload
     items: List[OrderItemPayload] = Field(min_length=1)
     promo_code: Optional[str] = None
+    payment_method: str = Field(default="TRANSFER", pattern="^(TRANSFER|COD)$")
+    cod_consent: bool = Field(default=False, description="ความยินยอมเงื่อนไขค่าจัดส่ง COD")
 
-# โมเดลรายการสินค้าสำหรับส่งกลับไปให้ LIFF วาด Flex Message
+    @field_validator("cod_consent")
+    @classmethod
+    def validate_cod_consent(cls, v: bool, info) -> bool:
+        if info.data.get("payment_method") == "COD" and not v:
+            raise ValueError("ต้องยินยอมเงื่อนไขการรับผิดชอบค่าจัดส่งบริการเก็บเงินปลายทาง")
+        return v
+
 class OrderItemSummaryResponse(BaseModel):
     product_id: str
     product_name: str
@@ -44,7 +52,10 @@ class OrderSummaryResponse(BaseModel):
     discount_amount: float = 0.0
     shipping_fee: float
     grand_total: float
+    payment_method: str
+    deposit_amount: float = 0.0          # ยอดที่ต้องโอนจริงตอนนี้ (ถ้า COD คือค่ามัดจำส่งไปกลับ, ถ้า TRANSFER คือยอดบิลเต็ม)
+    remaining_cod_amount: float = 0.0    # ยอดคงเหลือที่ต้องจ่ายพนักงานปลายทาง
     applied_promo_code: Optional[str] = None
     status: str
     message: str
-    items: List[OrderItemSummaryResponse] = Field(default_factory=list)  # <-- เพิ่มฟิลด์นี้
+    items: List[OrderItemSummaryResponse] = Field(default_factory=list)

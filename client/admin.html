@@ -2,179 +2,375 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Portal - Artisan</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Artisan Tea - Admin Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Prompt', sans-serif; }
+    .font-eng { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
 </head>
-<body class="bg-stone-100 text-stone-800 antialiased min-h-screen pb-16">
+<body class="bg-stone-100 text-stone-900 antialiased min-h-screen pb-24 selection:bg-amber-100 selection:text-amber-900">
 
-  <!-- Header -->
-  <header class="bg-stone-900 text-white px-4 py-3 sticky top-0 z-30 shadow flex justify-between items-center">
-    <div class="flex items-center gap-2">
-      <span class="text-xl">🍵</span>
-      <h1 class="text-sm font-bold">Admin Portal</h1>
-    </div>
-    <div id="admin-status-badge" class="text-xs bg-stone-800 px-3 py-1 rounded-full text-stone-300 font-mono">
-      ตรวจสอบสิทธิ์...
+  <!-- Floating Glass Header -->
+  <header class="sticky top-0 z-40 bg-stone-900/90 backdrop-blur-md text-white border-b border-stone-800/80 transition-all">
+    <div class="max-w-md mx-auto px-4 h-14 flex justify-between items-center">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-xl bg-amber-600/20 border border-amber-500/30 flex items-center justify-center text-base shadow-inner">
+          🍵
+        </div>
+        <div>
+          <h1 class="text-xs font-bold tracking-wide uppercase font-eng text-stone-100">Artisan Admin</h1>
+          <p class="text-[10px] text-stone-400 font-medium">จัดการร้าน & ออเดอร์</p>
+        </div>
+      </div>
+      
+      <!-- Status Badge -->
+      <div id="admin-status-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-medium bg-stone-800/90 text-stone-300 border border-stone-700/60 shadow-xs">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+        <span>ตรวจสอบสิทธิ์...</span>
+      </div>
     </div>
   </header>
 
-  <!-- Main Navigation Tabs (4 แท็บ) -->
-  <nav class="bg-white border-b border-stone-200 sticky top-[53px] z-20">
-    <div class="max-w-md mx-auto grid grid-cols-4 text-center text-xs font-bold">
-      <button id="nav-orders" class="tab-nav py-3 border-b-2 border-amber-600 text-amber-600">คำสั่งซื้อ</button>
-      <button id="nav-products" class="tab-nav py-3 border-b-2 border-transparent text-stone-500">สินค้า</button>
-      <button id="nav-promos" class="tab-nav py-3 border-b-2 border-transparent text-stone-500">โปรโมชั่น</button>
-      <button id="nav-settings" class="tab-nav py-3 border-b-2 border-transparent text-stone-500">ตั้งค่าร้าน</button>
+  <!-- Segmented Navigation Bar (Sticky Floating Pill) -->
+  <nav class="sticky top-14 z-30 bg-stone-100/95 backdrop-blur-sm py-2 px-4 border-b border-stone-200/60">
+    <div class="max-w-md mx-auto bg-stone-200/80 p-1 rounded-2xl flex items-center shadow-inner border border-stone-300/40">
+      <button id="nav-orders" class="tab-nav flex-1 py-2 rounded-xl text-xs font-bold transition-all text-amber-900 bg-white shadow-xs">
+        คำสั่งซื้อ
+      </button>
+      <button id="nav-products" class="tab-nav flex-1 py-2 rounded-xl text-xs font-medium transition-all text-stone-500 hover:text-stone-800">
+        สินค้า
+      </button>
+      <button id="nav-promos" class="tab-nav flex-1 py-2 rounded-xl text-xs font-medium transition-all text-stone-500 hover:text-stone-800">
+        คูปอง
+      </button>
+      <button id="nav-settings" class="tab-nav flex-1 py-2 rounded-xl text-xs font-medium transition-all text-stone-500 hover:text-stone-800">
+        ตั้งค่าร้าน
+      </button>
     </div>
   </nav>
 
   <main class="max-w-md mx-auto p-4 space-y-4">
+    
     <!-- SECTION 1: ORDERS -->
     <section id="section-orders" class="space-y-3">
-      <div class="flex gap-2 overflow-x-auto pb-1" id="order-filters">
-        <button data-status="" class="filter-btn shrink-0 px-3 py-1 rounded-xl text-xs font-semibold bg-stone-900 text-white">ทั้งหมด</button>
-        <button data-status="AWAITING_PAYMENT" class="filter-btn shrink-0 px-3 py-1 rounded-xl text-xs font-semibold bg-white text-stone-600 border">ยังไม่ส่งสลิป</button>
-        <button data-status="PAYMENT_SUBMITTED" class="filter-btn shrink-0 px-3 py-1 rounded-xl text-xs font-semibold bg-white text-stone-600 border">รอตรวจสลิป</button>
-        <button data-status="CONFIRMED" class="filter-btn shrink-0 px-3 py-1 rounded-xl text-xs font-semibold bg-white text-stone-600 border">รอจัดส่ง</button>
-        <button data-status="SHIPPED" class="filter-btn shrink-0 px-3 py-1 rounded-xl text-xs font-semibold bg-white text-stone-600 border">จัดส่งแล้ว</button>
+      
+      <!-- Date Range Filter & KPI Metrics Widget -->
+      <div class="bg-white p-3.5 rounded-2xl border border-stone-200/80 shadow-xs space-y-2.5">
+        <div class="flex items-center justify-between gap-2 border-b border-stone-100 pb-2">
+          <div class="flex items-center gap-1.5 text-xs font-bold text-stone-700">
+            <span>📅</span>
+            <span>ช่วงวันที่ดูออเดอร์</span>
+          </div>
+          <button id="btn-clear-date" class="text-[11px] text-stone-400 hover:text-red-500 font-medium transition-colors hidden">
+            ล้างช่วงวันที่
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5 flex-1">
+            <input 
+              type="date" 
+              id="order-date-start" 
+              class="w-full border border-stone-200 rounded-xl px-2 py-1.5 text-xs outline-none focus:border-amber-600 text-stone-800 bg-stone-50 font-mono" 
+            />
+            <span class="text-[11px] text-stone-400 shrink-0">ถึง</span>
+            <input 
+              type="date" 
+              id="order-date-end" 
+              class="w-full border border-stone-200 rounded-xl px-2 py-1.5 text-xs outline-none focus:border-amber-600 text-stone-800 bg-stone-50 font-mono" 
+            />
+          </div>
+
+          <!-- Micro KPI Badge -->
+          <div id="orders-metric-badge" class="text-right shrink-0 border-l border-stone-100 pl-3">
+            <span class="text-[10px] text-stone-400 block font-medium">ยอดคำนวณ</span>
+            <span class="text-xs font-bold text-stone-800 font-eng">฿0.00</span>
+          </div>
+        </div>
       </div>
-      <div id="orders-list" class="space-y-2"></div>
+
+      <!-- Order Status Filter Pills (Horizontal Touch Slider) -->
+      <div class="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar pt-0.5" id="order-filters">
+        <button data-status="" class="filter-btn shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-stone-900 text-white shadow-xs">
+          ทั้งหมด
+        </button>
+        <button data-status="AWAITING_PAYMENT" class="filter-btn shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all bg-white text-stone-600 border border-stone-200 hover:bg-stone-50">
+          ยังไม่ส่งสลิป
+        </button>
+        <button data-status="PAYMENT_SUBMITTED" class="filter-btn shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all bg-white text-stone-600 border border-stone-200 hover:bg-stone-50">
+          รอตรวจสลิป
+        </button>
+        <button data-status="CONFIRMED" class="filter-btn shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all bg-white text-stone-600 border border-stone-200 hover:bg-stone-50">
+          รอจัดส่ง
+        </button>
+        <button data-status="SHIPPED" class="filter-btn shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all bg-white text-stone-600 border border-stone-200 hover:bg-stone-50">
+          จัดส่งแล้ว
+        </button>
+        <button data-status="CANCELLED" class="filter-btn shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all bg-white text-stone-600 border border-stone-200 hover:bg-stone-50">
+          ยกเลิกแล้ว
+        </button>
+      </div>
+
+      <!-- Orders List Container -->
+      <div id="orders-list" class="space-y-3 pt-1"></div>
     </section>
 
     <!-- SECTION 2: PRODUCTS -->
     <section id="section-products" class="hidden space-y-3">
-      <div class="flex justify-between items-center">
-        <h2 class="text-xs font-bold text-stone-600">รายการสินค้าในร้าน</h2>
-        <button id="btn-add-product" class="bg-amber-600 text-white text-xs px-3 py-1.5 rounded-xl font-bold">+ เพิ่มสินค้า</button>
+      <div class="flex justify-between items-center px-1">
+        <div>
+          <h2 class="text-xs font-bold text-stone-800 uppercase tracking-wider">คลังสินค้า</h2>
+          <p class="text-[11px] text-stone-400">จัดการรายการและราคาขาย</p>
+        </div>
+        <button id="btn-add-product" class="bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs px-3.5 py-2 rounded-xl font-bold transition-all shadow-xs flex items-center gap-1">
+          <span>+</span> เพิ่มสินค้าใหม่
+        </button>
       </div>
-      <div id="products-list" class="space-y-2"></div>
+      <div id="products-list" class="space-y-2.5"></div>
     </section>
 
     <!-- SECTION 3: PROMOTIONS -->
     <section id="section-promos" class="hidden space-y-3">
-      <div class="flex justify-between items-center">
-        <h2 class="text-xs font-bold text-stone-600">โค้ดส่วนลดทั้งหมด</h2>
-        <button id="btn-add-promo" class="bg-amber-600 text-white text-xs px-3 py-1.5 rounded-xl font-bold">+ สร้างโค้ด</button>
+      <div class="flex justify-between items-center px-1">
+        <div>
+          <h2 class="text-xs font-bold text-stone-800 uppercase tracking-wider">แคมเปญ & คูปอง</h2>
+          <p class="text-[11px] text-stone-400">โค้ดส่วนลดและโปรโมชั่นหน้าร้าน</p>
+        </div>
+        <button id="btn-add-promo" class="bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs px-3.5 py-2 rounded-xl font-bold transition-all shadow-xs flex items-center gap-1">
+          <span>+</span> สร้างโค้ด
+        </button>
       </div>
-      <div id="promos-list" class="space-y-2"></div>
+      <div id="promos-list" class="space-y-2.5"></div>
     </section>
 
     <!-- SECTION 4: STORE SETTINGS -->
-    <section id="section-settings" class="hidden space-y-3">
-      <div class="flex justify-between items-center">
-        <h2 class="text-xs font-bold text-stone-600">การตั้งค่าร้านและเกณฑ์ค่าจัดส่ง</h2>
+    <section id="section-settings" class="hidden space-y-4">
+      
+      <!-- บัญชีธนาคารและ QR Code -->
+      <div class="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs space-y-3.5">
+        <div class="flex items-center gap-2 border-b border-stone-100 pb-2.5">
+          <span class="text-base">🏦</span>
+          <div>
+            <h2 class="text-xs font-bold text-stone-900">บัญชีธนาคาร & QR Code พร้อมเพย์</h2>
+            <p class="text-[10px] text-stone-400">ข้อมูลนี้จะนำไปแสดงให้ลูกค้าเมื่อกดสั่งซื้อ</p>
+          </div>
+        </div>
+
+        <div class="space-y-2.5 text-xs">
+          <div>
+            <label class="text-[11px] font-medium text-stone-600 block mb-1">ชื่อธนาคาร</label>
+            <input type="text" id="setting-bank-name" placeholder="เช่น ธนาคารกสิกรไทย (KBANK)" class="w-full px-3 py-2 border border-stone-200 rounded-xl font-medium focus:border-amber-600 focus:ring-1 focus:ring-amber-600 outline-none transition-all" />
+          </div>
+          <div>
+            <label class="text-[11px] font-medium text-stone-600 block mb-1">ชื่อบัญชี</label>
+            <input type="text" id="setting-bank-acc-name" placeholder="เช่น บจก. อาร์ทิซาน วีด" class="w-full px-3 py-2 border border-stone-200 rounded-xl font-medium focus:border-amber-600 focus:ring-1 focus:ring-amber-600 outline-none transition-all" />
+          </div>
+          <div>
+            <label class="text-[11px] font-medium text-stone-600 block mb-1">เลขที่บัญชี</label>
+            <input type="text" id="setting-bank-number" placeholder="เช่น 0987654321" class="w-full px-3 py-2 border border-stone-200 rounded-xl font-mono font-bold focus:border-amber-600 focus:ring-1 focus:ring-amber-600 outline-none transition-all" />
+          </div>
+
+          <!-- อัปโหลดภาพ QR Code -->
+          <div class="pt-1.5 border-t border-stone-100">
+            <label class="text-[11px] font-medium text-stone-600 block mb-1.5">ภาพ QR Code รับเงิน</label>
+            <div class="flex items-center gap-3">
+              <div id="setting-qr-preview-box" class="w-16 h-16 rounded-xl bg-stone-50 border border-stone-200 overflow-hidden flex items-center justify-center shrink-0 shadow-inner">
+                <img id="setting-qr-preview-img" src="" alt="QR Preview" class="w-full h-full object-contain hidden" />
+                <span id="setting-qr-placeholder" class="text-[11px] text-stone-400">ไม่มีรูป</span>
+              </div>
+              <div class="flex-1 space-y-1">
+                <input type="file" id="setting-qr-file" accept="image/*" class="w-full text-xs text-stone-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[11px] file:font-semibold file:bg-stone-900 file:text-white hover:file:bg-stone-800 transition-all cursor-pointer" />
+                <input type="hidden" id="setting-qr-url" />
+                <p id="setting-qr-upload-status" class="text-[10px] text-stone-400">รองรับไฟล์ภาพ .jpg, .png ขนาดไม่เกิน 2MB</p>
+              </div>
+            </div>
+          </div>
+
+          <button id="btn-save-bank-settings" type="button" class="w-full mt-2 bg-stone-900 hover:bg-stone-800 active:scale-98 text-white font-bold py-2.5 rounded-xl text-xs transition-all shadow-xs">
+            บันทึกข้อมูลการเงิน
+          </button>
+        </div>
       </div>
-      <div id="settings-list" class="space-y-2"></div>
+
+      <!-- ค่าจัดส่งและเกณฑ์ต่างๆ -->
+      <div class="space-y-2">
+        <div class="px-1">
+          <h2 class="text-xs font-bold text-stone-800 uppercase tracking-wider">เกณฑ์คำนวณเงิน & จัดส่ง</h2>
+          <p class="text-[11px] text-stone-400">ค่าส่งมาตรฐาน, ขั้นต่ำ และเงื่อนไข COD</p>
+        </div>
+        <div id="settings-list" class="space-y-2"></div>
+      </div>
     </section>
   </main>
 
   <!-- Modal: Shipping Tracking -->
-  <dialog id="modal-shipping" class="rounded-2xl p-4 max-w-xs w-full backdrop:bg-stone-900/60 shadow-xl">
-    <form id="form-shipping" class="space-y-3">
-      <h3 class="text-sm font-bold">บันทึกสถานะจัดส่ง</h3>
+  <dialog id="modal-shipping" class="rounded-3xl p-5 max-w-xs w-full backdrop:bg-stone-900/60 shadow-2xl border border-stone-200">
+    <form id="form-shipping" class="space-y-3.5">
+      <div class="flex justify-between items-center">
+        <h3 class="text-xs font-bold text-stone-900">บันทึกสถานะจัดส่งพัสดุ</h3>
+        <button type="button" onclick="this.closest('dialog').close()" class="text-stone-400 hover:text-stone-600 text-base leading-none">&times;</button>
+      </div>
       <input type="hidden" id="ship-order-id" />
       <div>
-        <label class="text-[11px] text-stone-500">เลขพัสดุ (เว้นว่างได้)</label>
-        <input type="text" id="ship-tracking" placeholder="เช่น TH0123456789 (ไม่บังคับ)" class="w-full px-3 py-2 border rounded-xl text-xs uppercase mt-1" />
+        <label class="text-[11px] font-medium text-stone-600 block mb-1">เลขพัสดุ Tracking (เว้นว่างได้)</label>
+        <input type="text" id="ship-tracking" placeholder="เช่น TH0123456789" class="w-full px-3 py-2 border border-stone-200 rounded-xl text-xs uppercase font-mono outline-none focus:border-blue-600 transition-all" />
       </div>
       <div class="flex gap-2 justify-end pt-1">
-        <button type="button" onclick="this.closest('dialog').close()" class="px-3 py-1 text-xs bg-stone-100 rounded-lg">ยกเลิก</button>
-        <button type="submit" class="px-3 py-1 text-xs bg-emerald-600 text-white font-bold rounded-lg">ยืนยันการจัดส่ง</button>
+        <button type="button" onclick="this.closest('dialog').close()" class="px-3.5 py-2 text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium rounded-xl transition-all">ยกเลิก</button>
+        <button type="submit" class="px-4 py-2 text-xs bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold rounded-xl shadow-xs transition-all">ยืนยันจัดส่ง</button>
       </div>
     </form>
   </dialog>
 
-  <!-- Modal: Add / Edit Product (มีช่อง URL รูปภาพ) -->
-  <dialog id="modal-product" class="rounded-2xl p-4 max-w-sm w-full backdrop:bg-stone-900/60 shadow-xl">
+  <!-- Modal: Add / Edit Product -->
+  <dialog id="modal-product" class="rounded-3xl p-5 max-w-sm w-full backdrop:bg-stone-900/60 shadow-2xl border border-stone-200">
     <form id="form-product" class="space-y-3">
-      <h3 id="prod-modal-title" class="text-sm font-bold">เพิ่มสินค้าใหม่</h3>
-      <input type="text" id="prod-id" required placeholder="Product ID (เช่น tea-05)" class="w-full px-3 py-2 border rounded-xl text-xs disabled:bg-stone-100" />
-      <input type="text" id="prod-name" required placeholder="ชื่อสินค้า" class="w-full px-3 py-2 border rounded-xl text-xs" />
-      <textarea id="prod-desc" rows="2" placeholder="คำอธิบาย/รายละเอียดสินค้า" class="w-full px-3 py-2 border rounded-xl text-xs"></textarea>
+      <div class="flex justify-between items-center border-b border-stone-100 pb-2">
+        <h3 id="prod-modal-title" class="text-xs font-bold text-stone-900">จัดการข้อมูลสินค้า</h3>
+        <button type="button" onclick="this.closest('dialog').close()" class="text-stone-400 hover:text-stone-600 text-base leading-none">&times;</button>
+      </div>
+      
+      <div class="space-y-2">
+        <label class="text-[11px] font-medium text-stone-600 block">รูปภาพสินค้า</label>
+        
+        <!-- กล่องพรีวิวภาพปัจจุบัน -->
+        <div id="prod-preview-box" class="w-full h-36 rounded-2xl bg-stone-50 border border-stone-200 overflow-hidden flex flex-col items-center justify-center relative shadow-inner">
+          <img id="prod-preview-img" src="" alt="Product Preview" class="w-full h-full object-cover hidden" />
+          <div id="prod-preview-placeholder" class="text-center p-3">
+            <span class="text-2xl block mb-1">📷</span>
+            <span class="text-[11px] text-stone-400 font-medium">ยังไม่มีรูปภาพสินค้า</span>
+          </div>
+        </div>
+
+        <input type="file" id="prod-file-input" accept="image/*" class="w-full text-xs text-stone-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-900 file:text-white hover:file:bg-stone-800 transition-all cursor-pointer" />
+        <input type="hidden" id="prod-image" />
+      </div>
+
+      <input type="text" id="prod-id" required placeholder="Product ID (เช่น tea-05)" class="w-full px-3 py-2 border border-stone-200 rounded-xl text-xs font-mono disabled:bg-stone-100 outline-none focus:border-amber-600" />
+      <input type="text" id="prod-name" required placeholder="ชื่อสินค้า" class="w-full px-3 py-2 border border-stone-200 rounded-xl text-xs outline-none focus:border-amber-600" />
+      <textarea id="prod-desc" rows="2" placeholder="คำอธิบาย/รายละเอียดสินค้า" class="w-full px-3 py-2 border border-stone-200 rounded-xl text-xs outline-none focus:border-amber-600"></textarea>
+      
       <div class="grid grid-cols-2 gap-2">
-        <select id="prod-cat" class="w-full px-3 py-2 border rounded-xl text-xs">
-        </select>
-        <select id="prod-type" disabled class="w-full px-3 py-2 border rounded-xl text-xs">
-          <option value="BY_WEIGHT">ชั่ง</option>
+        <select id="prod-cat" class="w-full px-3 py-2 border border-stone-200 rounded-xl text-xs outline-none focus:border-amber-600 bg-white"></select>
+        <select id="prod-type" disabled class="w-full px-3 py-2 border border-stone-200 rounded-xl text-xs bg-stone-100 text-stone-500">
+          <option value="BY_WEIGHT">ชั่งกรัม</option>
           <option value="PER_PIECE">ชิ้น</option>
         </select>
       </div>
-      <input type="number" id="prod-price" step="0.01" placeholder="ราคาต่อหน่วย / กรัม (price_per_unit)" class="w-full px-3 py-2 border rounded-xl text-xs" />
+      <input type="number" id="prod-price" step="0.01" placeholder="ราคาต่อหน่วย / กรัม (price_per_unit)" class="w-full px-3 py-2 border border-stone-200 rounded-xl text-xs font-mono outline-none focus:border-amber-600" />
       
-      <div>
-        <label class="text-[11px] text-stone-500 block mb-1">รูปภาพสินค้า</label>
-        <input type="file" id="prod-file-input" accept="image/*" class="w-full text-xs text-stone-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-900 file:text-white hover:file:bg-stone-800" />
-        <input type="hidden" id="prod-image" />
-      </div>
-      <input type="text" id="prod-variants" placeholder="ตัวเลือกสินค้า เช่น สีดำ, สีขาว (คั่นด้วยจุลภาค)" class="w-full px-3 py-2 border rounded-xl text-xs" />
+      <input type="text" id="prod-variants" placeholder="ตัวเลือกสินค้า เช่น สีดำ, สีขาว (คั่นด้วยจุลภาค)" class="w-full px-3 py-2 border border-stone-200 rounded-xl text-xs outline-none focus:border-amber-600" />
       
-      <!-- แทนที่บล็อก #tier-container ใน modal-product ของ admin.html -->
-      <div id="tier-container" class="space-y-2 p-3 bg-stone-50 rounded-xl border border-stone-200">
+      <!-- บล็อกขนาดและราคาขาย -->
+      <div id="tier-container" class="space-y-2 p-3 bg-stone-50 rounded-2xl border border-stone-200/80">
         <div class="flex justify-between items-center">
           <div>
-            <label class="text-[11px] font-bold text-stone-700">บล็อกขนาดและราคาขาย</label>
-            <span class="text-[10px] text-stone-400 block">กำหนดขนาดแพ็กเกจพร้อมราคาตายตัว</span>
+            <label class="text-[11px] font-bold text-stone-800">บล็อกแพ็กเกจราคาเหมา</label>
+            <span class="text-[10px] text-stone-400 block">กำหนดขนาดและราคาขายตายตัว</span>
           </div>
-          <button type="button" id="btn-add-tier-row" class="px-2.5 py-1 text-[11px] bg-stone-900 text-white font-bold rounded-lg hover:bg-stone-800 transition-all">
+          <button type="button" id="btn-add-tier-row" class="px-2.5 py-1 text-[11px] bg-stone-900 hover:bg-stone-800 active:scale-95 text-white font-bold rounded-lg transition-all shadow-xs">
             + เพิ่มขนาด
           </button>
         </div>
-
-        <div id="tier-rows-list" class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-          <!-- แถวตัวอย่างจะถูก Inject ด้วย JavaScript -->
-        </div>
+        <div id="tier-rows-list" class="space-y-1.5 max-h-36 overflow-y-auto pr-1"></div>
       </div>
 
-      <div class="flex gap-2 justify-end pt-2">
-        <button type="button" onclick="this.closest('dialog').close()" class="px-3 py-1 text-xs bg-stone-100 rounded-lg">ยกเลิก</button>
-        <button type="submit" class="px-3 py-1 text-xs bg-amber-600 text-white font-bold rounded-lg">บันทึกสินค้า</button>
+      <div class="flex gap-2 justify-end pt-2 border-t border-stone-100">
+        <button type="button" onclick="this.closest('dialog').close()" class="px-3.5 py-2 text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium rounded-xl transition-all">ยกเลิก</button>
+        <button type="submit" class="px-4 py-2 text-xs bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold rounded-xl shadow-xs transition-all">บันทึกสินค้า</button>
       </div>
     </form>
   </dialog>
 
-  <!-- Modal: Add Promotion (มีช่อง URL รูปภาพแบนเนอร์) -->
-  <dialog id="modal-promo" class="rounded-2xl p-4 max-w-xs w-full backdrop:bg-stone-900/60 shadow-xl">
+  <!-- Modal: Add / Edit Promotion -->
+  <dialog id="modal-promo" class="rounded-3xl p-5 max-w-sm w-full backdrop:bg-stone-900/60 shadow-2xl border border-stone-200">
     <form id="form-promo" class="space-y-3">
-      <h3 class="text-sm font-bold">สร้างโค้ดส่วนลด</h3>
-      <input type="text" id="promo-code" required placeholder="โค้ดส่วนลด เช่น LOVER" class="w-full px-3 py-2 border rounded-xl text-xs uppercase" />
-      <input type="text" id="promo-title" required placeholder="ชื่อแคมเปญ เช่น ส่วนลดเปิดร้าน" class="w-full px-3 py-2 border rounded-xl text-xs" />
-      <select id="promo-type" class="w-full px-3 py-2 border rounded-xl text-xs">
-        <option value="FIXED_AMOUNT">ลดเป็นบาท</option>
-        <option value="PERCENTAGE">ลดเป็นเปอร์เซ็นต์</option>
-      </select>
-      <input type="number" id="promo-value" required step="0.01" placeholder="มูลค่าส่วนลด" class="w-full px-3 py-2 border rounded-xl text-xs" />
-      <input type="number" id="promo-min" step="0.01" placeholder="ยอดสั่งซื้อขั้นต่ำ (0 = ไม่มี)" class="w-full px-3 py-2 border rounded-xl text-xs" />
+      <div class="flex justify-between items-center border-b border-stone-100 pb-2">
+        <h3 id="promo-modal-title" class="text-xs font-bold text-stone-900">สร้างโค้ดส่วนลด</h3>
+        <button type="button" onclick="this.closest('dialog').close()" class="text-stone-400 hover:text-stone-600 text-base leading-none">&times;</button>
+      </div>
+      <input type="hidden" id="promo-edit-id" />
       
-      <!-- Modal: Add Promotion ใน admin.html -->
-      <div>
-        <label class="text-[11px] text-stone-500 block mb-1">รูปภาพโปรโมชั่น</label>
-        <input type="file" id="promo-file-input" accept="image/*" class="w-full text-xs text-stone-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-900 file:text-white hover:file:bg-stone-800" />
+      <div class="space-y-2">
+        <label class="text-[11px] font-medium text-stone-600 block">รูปภาพแบนเนอร์โปรโมชั่น</label>
+        
+        <!-- กล่อง Preview แบนเนอร์ -->
+        <div id="promo-preview-box" class="w-full h-28 rounded-2xl bg-stone-50 border border-stone-200 overflow-hidden flex flex-col items-center justify-center relative shadow-inner">
+          <img id="promo-preview-img" src="" alt="Banner Preview" class="w-full h-full object-cover hidden" />
+          <div id="promo-preview-placeholder" class="text-center p-3">
+            <span class="text-2xl block mb-1">🎟️</span>
+            <span class="text-[11px] text-stone-400 font-medium">ยังไม่มีภาพแบนเนอร์</span>
+          </div>
+        </div>
+
+        <input type="file" id="promo-file-input" accept="image/*" class="w-full text-xs text-stone-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-900 file:text-white hover:file:bg-stone-800 transition-all cursor-pointer" />
         <input type="hidden" id="promo-banner" />
       </div>
-      <div class="flex gap-2 justify-end pt-2">
-        <button type="button" onclick="this.closest('dialog').close()" class="px-3 py-1 text-xs bg-stone-100 rounded-lg">ยกเลิก</button>
-        <button type="submit" class="px-3 py-1 text-xs bg-amber-600 text-white font-bold rounded-lg">สร้างโค้ด</button>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="text-[10px] text-stone-400 block mb-1">รหัสโค้ด (เช่น SALE50)</label>
+          <input type="text" id="promo-code" required placeholder="โค้ดส่วนลด" class="w-full px-3 py-2 border border-stone-200 rounded-xl text-xs uppercase font-mono font-bold disabled:bg-stone-100 outline-none focus:border-amber-600" />
+        </div>
+        <div>
+          <label class="text-[10px] text-stone-400 block mb-1">ประเภทส่วนลด</label>
+          <select id="promo-type" class="w-full px-3 py-2 border border-stone-200 rounded-xl text-xs outline-none focus:border-amber-600 bg-white">
+            <option value="FIXED_AMOUNT">ลดเป็นบาท (฿)</option>
+            <option value="PERCENTAGE">ลดเป็นเปอร์เซ็นต์ (%)</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="text-[10px] text-stone-400 block mb-1">ชื่อแคมเปญ / คำอธิบายสั้น</label>
+        <input type="text" id="promo-title" required placeholder="เช่น ต้อนรับสมาชิกใหม่ ลดทันที 50 บาท" class="w-full px-3 py-2 border border-stone-200 rounded-xl text-xs outline-none focus:border-amber-600" />
+      </div>
+
+      <div class="grid grid-cols-3 gap-2">
+        <div>
+          <label class="text-[10px] text-stone-400 block mb-1">มูลค่าลด</label>
+          <input type="number" id="promo-value" required step="0.01" placeholder="เช่น 50" class="w-full px-2.5 py-2 border border-stone-200 rounded-xl text-xs font-mono outline-none focus:border-amber-600" />
+        </div>
+        <div>
+          <label class="text-[10px] text-stone-400 block mb-1">ยอดขั้นต่ำ</label>
+          <input type="number" id="promo-min" step="0.01" placeholder="0 = ไม่มี" class="w-full px-2.5 py-2 border border-stone-200 rounded-xl text-xs font-mono outline-none focus:border-amber-600" />
+        </div>
+        <div>
+          <label class="text-[10px] text-stone-400 block mb-1">ลดสูงสุด</label>
+          <input type="number" id="promo-max" step="0.01" placeholder="ไม่จำกัด" class="w-full px-2.5 py-2 border border-stone-200 rounded-xl text-xs font-mono outline-none focus:border-amber-600" />
+        </div>
+      </div>
+      
+      <div class="flex gap-2 justify-end pt-2 border-t border-stone-100">
+        <button type="button" onclick="this.closest('dialog').close()" class="px-3.5 py-2 text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium rounded-xl transition-all">ยกเลิก</button>
+        <button type="submit" class="px-4 py-2 text-xs bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold rounded-xl shadow-xs transition-all">บันทึกคูปอง</button>
       </div>
     </form>
   </dialog>
 
   <!-- Modal: ดูรูปสลิปโอนเงิน -->
-  <dialog id="modal-slip-preview" class="rounded-3xl p-4 max-w-sm w-full backdrop:bg-stone-900/60 shadow-2xl">
+  <dialog id="modal-slip-preview" class="rounded-3xl p-4 max-w-sm w-full backdrop:bg-stone-900/70 shadow-2xl border border-stone-200">
     <div class="space-y-3">
       <div class="flex justify-between items-center pb-2 border-b border-stone-100">
-        <h3 class="text-xs font-bold text-stone-800">หลักฐานการโอน</h3>
+        <h3 class="text-xs font-bold text-stone-800">หลักฐานการโอนเงิน (สลิป)</h3>
         <button type="button" onclick="this.closest('dialog').close()" class="text-stone-400 hover:text-stone-600 text-lg font-bold leading-none">&times;</button>
       </div>
 
-      <div class="w-full max-h-[60vh] overflow-auto rounded-xl bg-stone-100 flex items-center justify-center p-1 border border-stone-200">
-        <img id="slip-preview-img" src="" alt="Slip" class="w-full h-auto object-contain rounded-lg" />
+      <div class="w-full max-h-[65vh] overflow-auto rounded-2xl bg-stone-50 flex items-center justify-center p-1 border border-stone-200/80 shadow-inner">
+        <img id="slip-preview-img" src="" alt="Slip" class="w-full h-auto object-contain rounded-xl" />
       </div>
 
       <div class="flex gap-2 justify-end pt-1">
-        <button type="button" onclick="this.closest('dialog').close()" class="px-4 py-1.5 text-xs bg-stone-100 text-stone-700 font-bold rounded-xl">ปิด</button>
-        <button type="button" id="btn-confirm-from-slip" class="px-4 py-1.5 text-xs bg-emerald-600 text-white font-bold rounded-xl active:scale-95 transition-transform">ยืนยันยอดเงินนี้</button>
+        <button type="button" onclick="this.closest('dialog').close()" class="px-4 py-2 text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold rounded-xl transition-all">ปิด</button>
+        <button type="button" id="btn-confirm-from-slip" class="px-4 py-2 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl active:scale-95 transition-transform shadow-xs">ยืนยันยอดเงินนี้</button>
       </div>
     </div>
   </dialog>

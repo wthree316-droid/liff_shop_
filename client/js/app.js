@@ -3,9 +3,12 @@ import { loadStoreSettings } from './core/store-settings.js';
 import { fetchActivePromotions } from './modules/promotion/promotion-api.js';
 import { renderPromotions } from './modules/promotion/promotion-ui.js';
 import { fetchProducts } from './modules/catalog/catalog-api.js';
-import { initCatalog } from './modules/catalog/catalog-ui.js?v=9999';
+import { initCatalog } from './modules/catalog/catalog-ui.js';
 import { initCartDrawer } from './modules/cart/cart-ui.js';
 import { CONFIG } from './core/config.js'; 
+import { showToast } from './core/toast.js';
+import { promotionLogic } from './modules/promotion/promotion-logic.js';
+
 
 document.addEventListener('DOMContentLoaded', async () => {
   const userBadge = document.getElementById('user-badge');
@@ -68,15 +71,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // เริ่มต้น Cart Drawer (ควบคุมทั้ง Drawer และ Floating Cart Bar ภายในตัว)
   initCartDrawer();
 
-  // ดึงข้อมูลสินค้าและโปรโมชั่นพร้อมกัน
+  // ในจังหวะดึงข้อมูลสำเร็จ:
   try {
     const [promotions, products] = await Promise.all([
       fetchActivePromotions(),
       fetchProducts()
     ]);
 
-    // ทดสอบดูว่าข้อมูล products เข้ามาเป็น Array หรือไม่
-    // alert(`ดึงสินค้าสำเร็จ: ${products ? products.length : 0} ชิ้น`);
+    promotionLogic.setPromotions(promotions);
 
     if (promoSlider && promoModal.modal) {
       renderPromotions(promotions, promoSlider, promoModal);
@@ -86,7 +88,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   } catch (error) {
     console.error('Initial load failed:', error);
-    // แจ้งเตือนข้อผิดพลาดขึ้นหน้าจอมือถือตรงๆ
-    alert(`โหลดข้อมูลไม่สำเร็จ: ${error.message || error}`);
+    showToast(`โหลดข้อมูลไม่สำเร็จ: ${error.message || error}`, 'error');
   }
 });

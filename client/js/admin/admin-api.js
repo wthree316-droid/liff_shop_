@@ -43,15 +43,17 @@ export const deleteAdminProduct = (id) => adminFetch(`/admin/products/${id}`, { 
 export const fetchAdminPromotions = () => adminFetch('/admin/promotions');
 export const createAdminPromotion = (payload) => adminFetch('/admin/promotions', { method: 'POST', body: JSON.stringify(payload) });
 export const toggleAdminPromotion = (id) => adminFetch(`/admin/promotions/${id}/toggle`, { method: 'PATCH' });
+export const updateAdminPromotion = (id, payload) => adminFetch(`/admin/promotions/${id}`, { method: 'PATCH', body: JSON.stringify(payload) });
 export const deleteAdminPromotion = (id) => adminFetch(`/admin/promotions/${id}`, { method: 'DELETE' });
 
 // Settings API
 export const fetchAdminSettings = () => adminFetch('/settings/details');
-export const updateAdminSetting = (key, value) => 
-  adminFetch(`/settings/${key}`, {
+export const updateAdminSetting = (key, value) => {
+  return adminFetch(`/settings/${key}`, {
     method: 'PUT',
-    body: JSON.stringify({ value: parseFloat(value) })
+    body: JSON.stringify({ value })
   });
+};
 
 export async function uploadAdminAsset(file) {
   const url = `${CONFIG.API_BASE_URL}/admin/upload`;

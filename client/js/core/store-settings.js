@@ -3,7 +3,12 @@ import { CONFIG } from './config.js';
 let cachedSettings = {
   free_shipping_threshold: 500,
   shipping_fee: 50,
-  min_order_amount: 100
+  min_order_amount: 100,
+  cod_deposit_fee: 80,
+  bank_name: 'ธนาคารกสิกรไทย (KBANK)',
+  bank_account_name: 'บจก. อาร์ทิซาน วีด',
+  bank_account_number: '0987654321',
+  payment_qr_url: ''
 };
 
 export async function loadStoreSettings() {
