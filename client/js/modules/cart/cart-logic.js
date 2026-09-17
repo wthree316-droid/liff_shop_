@@ -42,30 +42,12 @@ class CartLogicManager {
     const settings = getStoreSettings();
     const freeThreshold = Number(settings.free_shipping_threshold) || 500;
     const baseShippingFee = Number(settings.shipping_fee) || 40;
+    const codDepositFee = Number(settings.cod_deposit_fee) || 80;
 
     const subtotal = items.reduce((sum, item) => {
       const count = item.count || 1;
       return sum + (this.getItemPrice(item) * count);
     }, 0);
-
-    let shippingFee = 0;
-    let isFreeShipping = false;
-    let freeShippingDiff = 0;
-    let freeShippingProgress = 0;
-
-    if (this.paymentMethod === 'COD') {
-      shippingFee = items.length > 0 ? baseShippingFee : 0;
-    } else {
-      if (subtotal >= freeThreshold) {
-        shippingFee = 0;
-        isFreeShipping = true;
-        freeShippingProgress = 100;
-      } else {
-        shippingFee = items.length > 0 ? baseShippingFee : 0;
-        freeShippingDiff = freeThreshold - subtotal;
-        freeShippingProgress = Math.min(100, Math.round((subtotal / freeThreshold) * 100));
-      }
-    }
 
     let discountAmount = 0;
     if (this.appliedPromo) {
@@ -80,13 +62,44 @@ class CartLogicManager {
       discountAmount = Math.min(discountAmount, subtotal);
     }
 
-    const grandTotal = Math.max(0, subtotal - discountAmount + shippingFee);
+    const netSubtotal = Math.max(0, subtotal - discountAmount);
+
+    let shippingFee = 0;
+    let isFreeShipping = false;
+    let freeShippingDiff = 0;
+    let freeShippingProgress = 0;
+    let depositAmount = 0;
+    let remainingCod = 0;
+
+    if (this.paymentMethod === 'COD') {
+      shippingFee = items.length > 0 ? baseShippingFee : 0;
+      depositAmount = codDepositFee; // ยอดโอนมัดจำทันที
+
+      const depositCredit = Math.max(0, codDepositFee - baseShippingFee);
+      remainingCod = Math.max(0, netSubtotal - depositCredit);
+    } else {
+      if (netSubtotal >= freeThreshold) {
+        shippingFee = 0;
+        isFreeShipping = true;
+        freeShippingProgress = 100;
+      } else {
+        shippingFee = items.length > 0 ? baseShippingFee : 0;
+        freeShippingDiff = freeThreshold - netSubtotal;
+        freeShippingProgress = Math.min(100, Math.round((netSubtotal / freeThreshold) * 100));
+      }
+      depositAmount = Math.max(0, netSubtotal + shippingFee);
+      remainingCod = 0;
+    }
+
+    const grandTotal = Math.max(0, netSubtotal + shippingFee);
 
     return {
       subtotal,
       shippingFee,
       discountAmount,
       grandTotal,
+      depositAmount,
+      remainingCod,
       freeThreshold,
       isFreeShipping,
       freeShippingDiff,

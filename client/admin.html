@@ -3,20 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
   <title>Artisan Tea - Admin Portal</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍵</text></svg>" />
+  
   <style>
     body { font-family: 'Prompt', sans-serif; }
     .font-eng { font-family: 'Plus Jakarta Sans', sans-serif; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
+
 </head>
 <body class="bg-stone-100 text-stone-900 antialiased min-h-screen pb-24 selection:bg-amber-100 selection:text-amber-900">
+
+  <!-- Admin Splash / Preloader Overlay -->
+  <div id="admin-splash-screen" class="fixed inset-0 z-50 bg-stone-950 flex flex-col items-center justify-center transition-all duration-500 ease-out select-none">
+    <div class="relative flex items-center justify-center">
+      <!-- Glow Ring Animation -->
+      <div class="absolute w-24 h-24 rounded-full bg-amber-600/20 animate-ping opacity-75"></div>
+      <div class="w-20 h-20 rounded-3xl bg-stone-900 border border-stone-800 shadow-2xl flex items-center justify-center text-3xl transform transition-transform animate-bounce duration-1000">
+        🍵
+      </div>
+    </div>
+    
+    <div class="mt-6 text-center space-y-2">
+      <h2 class="text-sm font-bold tracking-wider uppercase text-stone-100 font-eng">Artisan Admin Portal</h2>
+      <div class="flex items-center justify-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+        <p id="admin-splash-status-text" class="text-xs text-stone-400 font-medium font-sans">กำลังตรวจสอบสิทธิ์ผู้ดูแลระบบ...</p>
+      </div>
+    </div>
+
+    <!-- Mini Progress Line -->
+    <div class="w-36 h-1 bg-stone-900 rounded-full mt-6 overflow-hidden border border-stone-800">
+      <div id="admin-splash-progress-bar" class="h-full bg-amber-600 rounded-full w-1/4 transition-all duration-300"></div>
+    </div>
+  </div>
 
   <!-- Floating Glass Header -->
   <header class="sticky top-0 z-40 bg-stone-900/90 backdrop-blur-md text-white border-b border-stone-800/80 transition-all">
@@ -60,63 +90,123 @@
   <main class="max-w-md mx-auto p-4 space-y-4">
     
     <!-- SECTION 1: ORDERS -->
-    <section id="section-orders" class="space-y-3">
+    <section id="section-orders" class="space-y-3.5">
       
-      <!-- Date Range Filter & KPI Metrics Widget -->
-      <div class="bg-white p-3.5 rounded-2xl border border-stone-200/80 shadow-xs space-y-2.5">
+      <!-- Date Range Filter -->
+      <div class="bg-white p-3.5 rounded-3xl border border-stone-200/80 shadow-xs space-y-2.5">
         <div class="flex items-center justify-between gap-2 border-b border-stone-100 pb-2">
           <div class="flex items-center gap-1.5 text-xs font-bold text-stone-700">
             <span>📅</span>
-            <span>ช่วงวันที่ดูออเดอร์</span>
+            <span>ช่วงวันที่ดูสถิติ & ออเดอร์</span>
           </div>
           <button id="btn-clear-date" class="text-[11px] text-stone-400 hover:text-red-500 font-medium transition-colors hidden">
             ล้างช่วงวันที่
           </button>
         </div>
 
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-center gap-1.5 flex-1">
-            <input 
-              type="date" 
-              id="order-date-start" 
-              class="w-full border border-stone-200 rounded-xl px-2 py-1.5 text-xs outline-none focus:border-amber-600 text-stone-800 bg-stone-50 font-mono" 
-            />
-            <span class="text-[11px] text-stone-400 shrink-0">ถึง</span>
-            <input 
-              type="date" 
-              id="order-date-end" 
-              class="w-full border border-stone-200 rounded-xl px-2 py-1.5 text-xs outline-none focus:border-amber-600 text-stone-800 bg-stone-50 font-mono" 
-            />
-          </div>
-
-          <!-- Micro KPI Badge -->
-          <div id="orders-metric-badge" class="text-right shrink-0 border-l border-stone-100 pl-3">
-            <span class="text-[10px] text-stone-400 block font-medium">ยอดคำนวณ</span>
-            <span class="text-xs font-bold text-stone-800 font-eng">฿0.00</span>
-          </div>
+        <div class="flex items-center gap-1.5">
+          <input 
+            type="date" 
+            id="order-date-start" 
+            class="w-full border border-stone-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:border-amber-600 text-stone-800 bg-stone-50 font-mono" 
+          />
+          <span class="text-[11px] text-stone-400 shrink-0 font-medium">ถึง</span>
+          <input 
+            type="date" 
+            id="order-date-end" 
+            class="w-full border border-stone-200 rounded-xl px-2.5 py-1.5 text-xs outline-none focus:border-amber-600 text-stone-800 bg-stone-50 font-mono" 
+          />
         </div>
       </div>
 
-      <!-- Order Status Filter Pills (Horizontal Touch Slider) -->
-      <div class="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar pt-0.5" id="order-filters">
-        <button data-status="" class="filter-btn shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-stone-900 text-white shadow-xs">
-          ทั้งหมด
-        </button>
-        <button data-status="AWAITING_PAYMENT" class="filter-btn shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all bg-white text-stone-600 border border-stone-200 hover:bg-stone-50">
-          ยังไม่ส่งสลิป
-        </button>
-        <button data-status="PAYMENT_SUBMITTED" class="filter-btn shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all bg-white text-stone-600 border border-stone-200 hover:bg-stone-50">
-          รอตรวจสลิป
-        </button>
-        <button data-status="CONFIRMED" class="filter-btn shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all bg-white text-stone-600 border border-stone-200 hover:bg-stone-50">
-          รอจัดส่ง
-        </button>
-        <button data-status="SHIPPED" class="filter-btn shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all bg-white text-stone-600 border border-stone-200 hover:bg-stone-50">
-          จัดส่งแล้ว
-        </button>
-        <button data-status="CANCELLED" class="filter-btn shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all bg-white text-stone-600 border border-stone-200 hover:bg-stone-50">
-          ยกเลิกแล้ว
-        </button>
+      <!-- DASHBOARD: Actionable Status Cards & Payment Split -->
+      <div class="space-y-2.5">
+        <!-- 1. Grid การ์ดสถานะ (กดที่การ์ดเพื่อสลับฟิลเตอร์ได้ทันที) -->
+        <div class="grid grid-cols-2 gap-2" id="dashboard-status-grid">
+          <!-- การ์ด 1: ทั้งหมด (ยอดขายรวม) -->
+          <div data-status="" class="dash-card cursor-pointer bg-white p-3 rounded-2xl border-2 border-stone-900 shadow-xs active:scale-98 transition-all">
+            <div class="flex justify-between items-start">
+              <span class="text-[10px] font-bold text-stone-500 uppercase tracking-wider">📦 ยอดรวมทั้งหมด</span>
+              <span id="metric-count-all" class="text-[10px] font-mono font-bold bg-stone-900 text-white px-2 py-0.5 rounded-full">0 บิล</span>
+            </div>
+            <p id="metric-amount-all" class="text-sm font-extrabold text-stone-900 font-eng mt-1.5">฿0.00</p>
+          </div>
+
+          <!-- การ์ด 2: รอตรวจสลิป -->
+          <div data-status="PAYMENT_SUBMITTED" class="dash-card cursor-pointer bg-white p-3 rounded-2xl border-2 border-transparent hover:border-amber-400 shadow-xs active:scale-98 transition-all">
+            <div class="flex justify-between items-start">
+              <span class="text-[10px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                รอตรวจสลิป
+              </span>
+              <span id="metric-count-submitted" class="text-[10px] font-mono font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full">0 บิล</span>
+            </div>
+            <p id="metric-amount-submitted" class="text-sm font-extrabold text-amber-900 font-eng mt-1.5">฿0.00</p>
+          </div>
+
+          <!-- การ์ด 3: รอจัดส่ง -->
+          <div data-status="CONFIRMED" class="dash-card cursor-pointer bg-white p-3 rounded-2xl border-2 border-transparent hover:border-blue-400 shadow-xs active:scale-98 transition-all">
+            <div class="flex justify-between items-start">
+              <span class="text-[10px] font-bold text-blue-700 uppercase tracking-wider">🚚 รอจัดส่ง</span>
+              <span id="metric-count-confirmed" class="text-[10px] font-mono font-bold bg-blue-50 text-blue-800 px-2 py-0.5 rounded-full">0 บิล</span>
+            </div>
+            <p id="metric-amount-confirmed" class="text-sm font-extrabold text-blue-900 font-eng mt-1.5">฿0.00</p>
+          </div>
+
+          <!-- การ์ด 4: จัดส่งแล้ว -->
+          <div data-status="SHIPPED" class="dash-card cursor-pointer bg-white p-3 rounded-2xl border-2 border-transparent hover:border-emerald-400 shadow-xs active:scale-98 transition-all">
+            <div class="flex justify-between items-start">
+              <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">✓ จัดส่งแล้ว</span>
+              <span id="metric-count-shipped" class="text-[10px] font-mono font-bold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-full">0 บิล</span>
+            </div>
+            <p id="metric-amount-shipped" class="text-sm font-extrabold text-emerald-900 font-eng mt-1.5">฿0.00</p>
+          </div>
+
+          <!-- การ์ด 5: ยังไม่ส่งสลิป -->
+          <div data-status="AWAITING_PAYMENT" class="dash-card cursor-pointer bg-white p-3 rounded-2xl border-2 border-transparent hover:border-stone-400 shadow-xs active:scale-98 transition-all">
+            <div class="flex justify-between items-start">
+              <span class="text-[10px] font-bold text-stone-500 uppercase tracking-wider">⏳ รอโอนเงิน</span>
+              <span id="metric-count-awaiting" class="text-[10px] font-mono font-bold bg-stone-100 text-stone-600 px-2 py-0.5 rounded-full">0 บิล</span>
+            </div>
+            <p id="metric-amount-awaiting" class="text-sm font-extrabold text-stone-700 font-eng mt-1.5">฿0.00</p>
+          </div>
+
+          <!-- การ์ด 6: ยกเลิกแล้ว -->
+          <div data-status="CANCELLED" class="dash-card cursor-pointer bg-white p-3 rounded-2xl border-2 border-transparent hover:border-red-300 shadow-xs active:scale-98 transition-all">
+            <div class="flex justify-between items-start">
+              <span class="text-[10px] font-bold text-red-500 uppercase tracking-wider">✕ ยกเลิกแล้ว</span>
+              <span id="metric-count-cancelled" class="text-[10px] font-mono font-bold bg-red-50 text-red-600 px-2 py-0.5 rounded-full">0 บิล</span>
+            </div>
+            <p id="metric-amount-cancelled" class="text-sm font-extrabold text-red-600 font-eng mt-1.5">฿0.00</p>
+          </div>
+        </div>
+
+        <!-- 2. กล่องสัดส่วนโอนเต็ม vs COD (อยู่ในกล่องเดียวกันแต่แบ่งครึ่ง) -->
+        <div class="bg-white p-3 rounded-2xl border border-stone-200/80 shadow-xs">
+          <div class="flex justify-between items-center text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2">
+            <span>สัดส่วนช่องทางชำระเงิน</span>
+            <span>(ไม่รวมยกเลิก)</span>
+          </div>
+          <div class="grid grid-cols-2 divide-x divide-stone-100">
+            <!-- ฝั่งโอนเต็มจำนวน -->
+            <div class="pr-3 space-y-0.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-stone-800">โอนเต็ม</span>
+                <span id="metric-pay-transfer-count" class="text-[10px] font-mono font-bold text-stone-500">0 บิล</span>
+              </div>
+              <p id="metric-pay-transfer-amount" class="text-xs font-bold text-stone-900 font-eng">฿0.00</p>
+            </div>
+            <!-- ฝั่งเก็บเงินปลายทาง COD -->
+            <div class="pl-3 space-y-0.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-amber-900">ปลายทาง</span>
+                <span id="metric-pay-cod-count" class="text-[10px] font-mono font-bold text-amber-800">0 บิล</span>
+              </div>
+              <p id="metric-pay-cod-amount" class="text-xs font-bold text-amber-900 font-eng">฿0.00</p>
+              <p id="metric-pay-cod-deposit" class="text-[9px] text-stone-400">มัดจำแล้ว: ฿0.00</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Orders List Container -->

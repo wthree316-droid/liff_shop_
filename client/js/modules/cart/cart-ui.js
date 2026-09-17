@@ -267,7 +267,9 @@ function updateOrderSummary() {
 
   if (progressTarget) progressTarget.textContent = `฿${summary.freeThreshold}`;
 
-  if (cartLogic.getPaymentMethod() === 'COD') {
+  const isCod = cartLogic.getPaymentMethod() === 'COD';
+
+  if (isCod) {
     if (freeBox) freeBox.classList.add('opacity-40', 'pointer-events-none');
     if (progressText) progressText.textContent = 'บริการ COD ไม่เข้าร่วมโปรโมชั่นส่งฟรี';
     if (progressBar) progressBar.style.width = '0%';
@@ -286,11 +288,30 @@ function updateOrderSummary() {
   const elDiscount = document.getElementById('drawer-discount');
   const elShipping = document.getElementById('drawer-shipping');
   const elGrandTotal = document.getElementById('drawer-grand-total');
+  const submitBtn = document.getElementById('btn-submit-order');
 
   if (elSubtotal) elSubtotal.textContent = `฿${summary.subtotal.toFixed(2)}`;
   if (elDiscount) elDiscount.textContent = `-฿${summary.discountAmount.toFixed(2)}`;
   if (elShipping) elShipping.textContent = `฿${summary.shippingFee.toFixed(2)}`;
   if (elGrandTotal) elGrandTotal.textContent = `฿${summary.grandTotal.toFixed(2)}`;
+
+  // ปรับการแสดงผลปุ่มชำระเงินตามวิธีที่เลือก
+  if (submitBtn) {
+    if (isCod) {
+      submitBtn.innerHTML = `
+        <div class="text-left">
+          <span class="block text-[11px] opacity-90">โอนมัดจำค่าจัดส่งทันที</span>
+          <span class="text-xs text-amber-100 font-normal block">(ชำระปลายทาง ฿${summary.remainingCod.toFixed(2)})</span>
+        </div>
+        <span class="font-mono text-base font-bold">฿${summary.depositAmount.toFixed(2)}</span>
+      `;
+    } else {
+      submitBtn.innerHTML = `
+        <span>โอนชำระเงินเต็มจำนวน</span>
+        <span class="font-mono text-base font-bold">฿${summary.depositAmount.toFixed(2)}</span>
+      `;
+    }
+  }
 }
 
 function renderDrawerItems() {

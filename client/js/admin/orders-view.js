@@ -3,15 +3,21 @@ import { ordersState } from './orders-logic.js';
 let isDelegated = false;
 
 export function setupOrderFilters() {
-  const filterBtns = document.querySelectorAll('#order-filters .filter-btn');
-  filterBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      filterBtns.forEach(b => {
-        b.className = 'filter-btn shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all bg-white text-stone-600 border border-stone-200 hover:bg-stone-50';
-      });
-      btn.className = 'filter-btn shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-stone-900 text-white shadow-xs';
+  // ผูก Event กับ Status Cards บน Dashboard
+  const dashCards = document.querySelectorAll('#dashboard-status-grid .dash-card');
+  dashCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const status = card.dataset.status;
       
-      const filtered = ordersState.setStatusFilter(btn.dataset.status);
+      // ปรับกรอบไฮไลท์ของการ์ดที่เลือก
+      dashCards.forEach(c => {
+        c.classList.remove('border-stone-900', 'bg-stone-50');
+        c.classList.add('border-transparent');
+      });
+      card.classList.remove('border-transparent');
+      card.classList.add('border-stone-900', 'bg-stone-50/70');
+
+      const filtered = ordersState.setStatusFilter(status);
       renderOrders(filtered);
     });
   });
@@ -79,17 +85,42 @@ export async function loadOrders() {
   }
 }
 
+function updateDashboardMetrics() {
+  const stats = ordersState.calculateDetailedMetrics();
+
+  // ตัวเลขสถานะ 6 หมวด
+  document.getElementById('metric-count-all').textContent = `${stats.TOTAL.count} บิล`;
+  document.getElementById('metric-amount-all').textContent = `฿${stats.TOTAL.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+
+  document.getElementById('metric-count-submitted').textContent = `${stats.PAYMENT_SUBMITTED.count} บิล`;
+  document.getElementById('metric-amount-submitted').textContent = `฿${stats.PAYMENT_SUBMITTED.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+
+  document.getElementById('metric-count-confirmed').textContent = `${stats.CONFIRMED.count} บิล`;
+  document.getElementById('metric-amount-confirmed').textContent = `฿${stats.CONFIRMED.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+
+  document.getElementById('metric-count-shipped').textContent = `${stats.SHIPPED.count} บิล`;
+  document.getElementById('metric-amount-shipped').textContent = `฿${stats.SHIPPED.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+
+  document.getElementById('metric-count-awaiting').textContent = `${stats.AWAITING_PAYMENT.count} บิล`;
+  document.getElementById('metric-amount-awaiting').textContent = `฿${stats.AWAITING_PAYMENT.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+
+  document.getElementById('metric-count-cancelled').textContent = `${stats.CANCELLED.count} บิล`;
+  document.getElementById('metric-amount-cancelled').textContent = `฿${stats.CANCELLED.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+
+  // สัดส่วน Transfer vs COD
+  document.getElementById('metric-pay-transfer-count').textContent = `${stats.TRANSFER.count} บิล`;
+  document.getElementById('metric-pay-transfer-amount').textContent = `฿${stats.TRANSFER.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+
+  document.getElementById('metric-pay-cod-count').textContent = `${stats.COD.count} บิล`;
+  document.getElementById('metric-pay-cod-amount').textContent = `฿${stats.COD.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+  document.getElementById('metric-pay-cod-deposit').textContent = `มัดจำ: ฿${stats.COD.depositAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })} | รอเก็บปลายทาง: ฿${stats.COD.remainingCod.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+}
+
 function renderOrders(orders) {
   const container = document.getElementById('orders-list');
-  const metricBadge = document.getElementById('orders-metric-badge');
-
-  const metrics = ordersState.calculateMetrics(orders);
-  if (metricBadge) {
-    metricBadge.innerHTML = `
-      <span class="text-[10px] text-stone-400 block font-medium">แสดง ${metrics.totalCount} บิล</span>
-      <span class="text-xs font-bold text-stone-800 font-eng">฿${metrics.totalSales.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
-    `;
-  }
+  
+  // อัปเดตตัวเลขบน Dashboard ทุกครั้งที่ช่วงวันที่หรือรายการเปลี่ยน
+  updateDashboardMetrics();
 
   if (!orders.length) {
     container.innerHTML = `
@@ -122,6 +153,7 @@ function renderOrders(orders) {
     const isCod = o.payment_method === 'COD';
     const depositVal = Number(o.deposit_amount || 0);
     const grandTotalVal = Number(o.grand_total || 0);
+    const remainingCodVal = Number(o.remaining_cod_amount ?? (grandTotalVal - depositVal));
     const timeDisplay = o.time_display ? `🕒 ${o.time_display}` : '';
 
     const paymentBadge = isCod
@@ -132,7 +164,6 @@ function renderOrders(orders) {
 
     renderedHtml += `
       <div class="bg-white p-4 rounded-3xl border border-stone-200/90 shadow-xs space-y-3 transition-all">
-        <!-- บรรทัดบน: รหัสบิล, เวลา, วิธีจ่าย และ Badge สถานะ -->
         <div class="flex justify-between items-start gap-2">
           <div>
             <div class="flex items-center gap-1.5 flex-wrap">
@@ -145,7 +176,6 @@ function renderOrders(orders) {
           <div>${renderStatusBadge(o.status)}</div>
         </div>
 
-        <!-- ที่อยู่จัดส่ง พร้อมปุ่มกด Copy ในคลิกเดียว -->
         <div class="bg-stone-50 rounded-2xl p-2.5 border border-stone-100 flex justify-between items-start gap-2">
           <p class="text-[11px] text-stone-600 line-clamp-2 leading-relaxed">${o.shipping_address}</p>
           <button data-copy="${fullShippingCopy}" class="btn-copy-address shrink-0 px-2.5 py-1 bg-white hover:bg-stone-100 border border-stone-200 rounded-xl text-[10px] font-bold text-stone-700 active:scale-95 transition-all shadow-2xs flex items-center gap-1">
@@ -153,7 +183,6 @@ function renderOrders(orders) {
           </button>
         </div>
 
-        <!-- รายการสินค้า -->
         <div class="space-y-1 text-xs border-t border-b border-stone-100 py-2">
           <p class="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">สินค้าในบิล (${o.items ? o.items.length : 0} รายการ):</p>
           ${o.items && o.items.length > 0 ? o.items.map(item => `
@@ -170,17 +199,24 @@ function renderOrders(orders) {
           `).join('') : '<p class="text-stone-400 text-[11px]">ไม่พบรายการสินค้า</p>'}
         </div>
 
-        <!-- สรุปยอดเงิน -->
         <div class="flex justify-between items-center text-xs">
           <div>
             <span class="text-[11px] text-stone-400 block">ยอดรวมทั้งสิ้น</span>
             <strong class="text-sm font-bold text-stone-900 font-eng">฿${grandTotalVal.toFixed(2)}</strong>
-            ${isCod ? `<span class="text-[10px] text-amber-800 block font-medium">รอเก็บปลายทาง ฿${grandTotalVal.toFixed(2)}</span>` : ''}
+            ${isCod ? `
+              <div class="space-y-0.5 mt-0.5">
+                <span class="text-[10px] text-amber-800 font-bold block">
+                  💵 เรียกเก็บปลายทาง: ฿${remainingCodVal.toFixed(2)}
+                </span>
+                <span class="text-[10px] text-stone-400 font-medium block">
+                  (หักมัดจำแล้ว ฿${depositVal.toFixed(2)})
+                </span>
+              </div>
+            ` : ''}
           </div>
           ${o.tracking_number ? `<span class="text-[11px] font-mono font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-xl">📦 ${o.tracking_number}</span>` : ''}
         </div>
 
-        <!-- ปุ่ม Action แตะง่าย (Touch Target 40-44px) -->
         <div class="flex justify-end items-center gap-2 pt-1">
           ${renderOrderActionButtons(o)}
         </div>
@@ -197,7 +233,6 @@ function initEventDelegation() {
 
   const container = document.getElementById('orders-list');
   container.addEventListener('click', async (e) => {
-    // 1. ปุ่มคัดลอกที่อยู่จัดส่ง
     const btnCopy = e.target.closest('.btn-copy-address');
     if (btnCopy) {
       const textToCopy = btnCopy.dataset.copy;
@@ -211,16 +246,18 @@ function initEventDelegation() {
           btnCopy.classList.remove('text-emerald-700', 'border-emerald-300', 'bg-emerald-50');
         }, 1500);
       } catch (err) {
-        alert('คัดลอกไม่สำเร็จ กรุณากดเลือกข้อความเอง');
+        alert('คัดลอกไม่สำเร็จ');
       }
       return;
     }
 
-    // 2. เปลี่ยนสถานะคำสั่งซื้อ
     const btnUpdate = e.target.closest('.btn-update-order');
     if (btnUpdate) {
       const { id, status } = btnUpdate.dataset;
-      if (!confirm(`ยืนยันการเปลี่ยนสถานะเป็น ${status}?`)) return;
+      const confirmMsg = status === 'CANCELLED' 
+        ? 'ยืนยันการยกเลิก / บันทึกสินค้าตีกลับสำหรับคำสั่งซื้อนี้?' 
+        : `ยืนยันการเปลี่ยนสถานะเป็น ${status}?`;
+      if (!confirm(confirmMsg)) return;
       try {
         const filtered = await ordersState.updateStatus(id, status);
         renderOrders(filtered);
@@ -230,7 +267,6 @@ function initEventDelegation() {
       return;
     }
 
-    // 3. ใส่เลขพัสดุ
     const btnShip = e.target.closest('.btn-ship-order');
     if (btnShip) {
       const modal = document.getElementById('modal-shipping');
@@ -240,7 +276,6 @@ function initEventDelegation() {
       return;
     }
 
-    // 4. ส่งทันที (ไม่มีแทร็กกิ้ง)
     const btnQuickShip = e.target.closest('.btn-quick-ship');
     if (btnQuickShip) {
       if (!confirm('ยืนยันส่งทันทีโดยไม่ระบุเลขพัสดุ?')) return;
@@ -253,7 +288,6 @@ function initEventDelegation() {
       return;
     }
 
-    // 5. ดูรูปสลิป
     const btnViewSlip = e.target.closest('.btn-view-slip');
     if (btnViewSlip) {
       const modal = document.getElementById('modal-slip-preview');
@@ -304,6 +338,13 @@ function renderOrderActionButtons(order) {
     return `
       <button data-id="${order.id}" class="btn-quick-ship px-3 py-2 text-stone-500 hover:text-stone-800 text-xs font-medium transition-all">ส่งเลย</button>
       <button data-id="${order.id}" class="btn-ship-order px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-xs transition-all">ใส่เลขพัสดุ</button>
+    `;
+  }
+  if (order.status === 'SHIPPED') {
+    return `
+      <button data-id="${order.id}" data-status="CANCELLED" class="btn-update-order px-3 py-1.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 text-xs font-medium transition-all">
+        ↩️ พัสดุตีกลับ / ยกเลิก
+      </button>
     `;
   }
   if (order.status === 'CANCELLED') {

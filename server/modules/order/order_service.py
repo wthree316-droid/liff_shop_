@@ -78,17 +78,21 @@ def process_order(request: CreateOrderRequest):
     is_cod = request.payment_method == "COD"
 
     if is_cod:
-        # COD: คิดค่าส่งเต็ม (ไม่ได้รับสิทธิ์ส่งฟรี)
+        # COD: คิดค่าจัดส่งปกติในบิล
         shipping_fee = default_shipping
         grand_total = round(net_subtotal + shipping_fee, 2)
-        deposit_amount = cod_deposit_fee  # โอนเฉพาะค่ามัดจำส่งไปกลับ
-        remaining_cod_amount = grand_total # ยอดที่ต้องเตรียมจ่ายให้คนส่งพัสดุ
+        deposit_amount = cod_deposit_fee  # ยอดที่ลูกค้าต้องโอนมัดจำก่อน
+
+        # คำนวณส่วนต่างมัดจำที่เหลือหลังหักค่าส่งขาไป (เช่น 100 - 50 = 50 บาท)
+        # แล้วนำไปหักออกจากยอดค่าสินค้าที่จะไปเก็บปลายทาง (เช่น 600 - 50 = 550 บาท)
+        deposit_credit_to_goods = max(0.0, cod_deposit_fee - default_shipping)
+        remaining_cod_amount = max(0.0, round(net_subtotal - deposit_credit_to_goods, 2))
         status_text = "รอยืนยันสลิปมัดจำค่าจัดส่ง"
     else:
-        # TRANSFER: คิดส่งฟรีตามเงื่อนไขปกติ
+        # TRANSFER: คิดค่าส่งตามเกณฑ์ปกติ (ส่งฟรีเมื่อถึงยอดที่กำหนด)
         shipping_fee = 0.0 if net_subtotal >= free_shipping_limit else default_shipping
         grand_total = round(net_subtotal + shipping_fee, 2)
-        deposit_amount = grand_total     # โอนยอดเต็มบิลทันที
+        deposit_amount = grand_total  # โอนเต็มจำนวน
         remaining_cod_amount = 0.0
         status_text = "รอชำระเงิน"
 

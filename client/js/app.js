@@ -9,9 +9,28 @@ import { CONFIG } from './core/config.js';
 import { showToast } from './core/toast.js';
 import { promotionLogic } from './modules/promotion/promotion-logic.js';
 
+// ควบคุมการอัปเดตข้อความและความคืบหน้าของ Splash Screen
+function setSplashProgress(text, percent) {
+  const statusEl = document.getElementById('splash-status-text');
+  const barEl = document.getElementById('splash-progress-bar');
+  if (statusEl) statusEl.textContent = text;
+  if (barEl) barEl.style.width = `${percent}%`;
+}
+
+// สั่งให้ Splash Screen ค่อยๆ จางหายไปเมื่อโหลดทุกอย่างเรียบร้อย
+function dismissSplashScreen() {
+  const splash = document.getElementById('app-splash-screen');
+  if (!splash) return;
+  setSplashProgress('พร้อมให้บริการ ✓', 100);
+  setTimeout(() => {
+    splash.classList.add('opacity-0', 'pointer-events-none');
+    setTimeout(() => splash.remove(), 500);
+  }, 350);
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
   const userBadge = document.getElementById('user-badge');
+  setSplashProgress('กำลังเชื่อมต่อ LINE...', 25);
 
   // 1. เริ่มต้น LIFF SDK
   const profile = await liffService.init();
@@ -30,6 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // หากไม่ได้เปิดผ่าน LINE Client และไม่อยู่ใน localhost ให้ล็อกหน้าจอ
   if (!liffService.isInClient && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    dismissSplashScreen();
     document.body.innerHTML = `
       <div class="min-h-screen bg-stone-900 text-white flex flex-col items-center justify-center p-6 text-center">
         <span class="text-5xl mb-4">🍵</span>
@@ -42,6 +62,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     `;
     return;
   }
+
+  setSplashProgress('กำลังโหลดข้อมูลร้านค้า...', 55);
 
   // 2. โหลดคอนฟิกเกณฑ์ร้านค้า
   await loadStoreSettings();
@@ -71,8 +93,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // เริ่มต้น Cart Drawer (ควบคุมทั้ง Drawer และ Floating Cart Bar ภายในตัว)
   initCartDrawer();
 
-  // ในจังหวะดึงข้อมูลสำเร็จ:
+  // 3. ดึงข้อมูลสินค้าและโปรโมชั่นพร้อมกัน
   try {
+    setSplashProgress('จัดเตรียมเมนูสินค้าและโปรโมชั่น...', 85);
     const [promotions, products] = await Promise.all([
       fetchActivePromotions(),
       fetchProducts()
@@ -86,8 +109,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (productContainer && categoryTabs) {
       initCatalog(products, productContainer, categoryTabs);
     }
+
+    // ทุกอย่างพร้อมใช้งานแล้ว ปิด Splash Screen
+    dismissSplashScreen();
+
   } catch (error) {
     console.error('Initial load failed:', error);
+    dismissSplashScreen();
     showToast(`โหลดข้อมูลไม่สำเร็จ: ${error.message || error}`, 'error');
   }
 });

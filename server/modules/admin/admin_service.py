@@ -16,7 +16,7 @@ VALID_TRANSITIONS = {
     "AWAITING_PAYMENT": ["PAYMENT_SUBMITTED", "CANCELLED"],
     "PAYMENT_SUBMITTED": ["CONFIRMED", "CANCELLED"],
     "CONFIRMED": ["SHIPPED", "CANCELLED"],
-    "SHIPPED": [],
+    "SHIPPED": ["CANCELLED"],
     "CANCELLED": []
 }
 
@@ -58,6 +58,23 @@ def fetch_orders(status_filter: Optional[str] = None) -> List[Dict[str, Any]]:
                 "unit_price_applied": float(item.get("unit_price_applied") or 0),
                 "line_total": float(item.get("line_total") or 0)
             })
+            
+        # คำนวณหายอดเก็บเงินปลายทางที่แท้จริงหลังหักมัดจำส่วนเกิน (ถ้าเป็น COD)
+        is_cod = o.get("payment_method") == "COD"
+        grand_tot = float(o.get("grand_total", 0.0))
+        dep_amt = float(o.get("deposit_amount", 0.0))
+        ship_fee = float(o.get("shipping_fee", 0.0))
+        subtot = float(o.get("subtotal", 0.0))
+        disc_amt = float(o.get("discount_amount", 0.0))
+        net_subtot = max(0.0, subtot - disc_amt)
+
+        if is_cod:
+            # ส่วนต่างมัดจำที่เหลือหลังหักค่าส่งขาไป
+            deposit_credit = max(0.0, dep_amt - ship_fee)
+            remaining_cod = max(0.0, round(net_subtot - deposit_credit, 2))
+        else:
+            remaining_cod = 0.0
+
         date_key, date_label, time_display = get_thai_order_time_meta(o.get("created_at"))
         formatted_orders.append({
             "id": o["id"],
@@ -66,15 +83,16 @@ def fetch_orders(status_filter: Optional[str] = None) -> List[Dict[str, Any]]:
             "customer_phone": o.get("customer_phone", ""),
             "shipping_address": o.get("shipping_address", ""),
             "customer_note": o.get("customer_note", ""),
-            "subtotal": float(o.get("subtotal", 0.0)),
-            "discount_amount": float(o.get("discount_amount", 0.0)),
-            "shipping_fee": float(o.get("shipping_fee", 0.0)),
-            "grand_total": float(o.get("grand_total", 0.0)),
+            "subtotal": subtot,
+            "discount_amount": disc_amt,
+            "shipping_fee": ship_fee,
+            "grand_total": grand_tot,
             "status": o.get("status", ""),
             "tracking_number": o.get("tracking_number"),
             "slip_image_url": signed_slip_url,
             "payment_method": o.get("payment_method", "TRANSFER"),
-            "deposit_amount": float(o.get("deposit_amount", 0.0)),
+            "deposit_amount": dep_amt,
+            "remaining_cod_amount": remaining_cod, # แนบยอดเก็บปลายทางจริง
             "created_at": o.get("created_at", ""),
             "date_key": date_key,
             "date_label": date_label,

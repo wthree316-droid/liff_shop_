@@ -34,6 +34,7 @@ class OrderSummaryResponse(BaseModel):
     slip_image_url: Optional[str] = None
     payment_method: Optional[str] = "TRANSFER"
     deposit_amount: Optional[float] = 0.0
+    remaining_cod_amount: Optional[float] = 0.0
     created_at: str
     date_key: Optional[str] = "unknown"
     date_label: Optional[str] = ""

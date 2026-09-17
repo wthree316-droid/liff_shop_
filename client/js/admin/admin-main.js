@@ -6,17 +6,40 @@ import { loadPromotions, initPromotionsModule } from './promos-view.js';
 import { loadSettings } from './settings-view.js';
 import { setupAssetUploads } from './ui-helpers.js';
 
-// client/js/admin/admin-main.js
+// ควบคุมข้อความและความคืบหน้าของ Admin Splash Screen
+function setAdminSplashProgress(text, percent) {
+  const statusEl = document.getElementById('admin-splash-status-text');
+  const barEl = document.getElementById('admin-splash-progress-bar');
+  if (statusEl) statusEl.textContent = text;
+  if (barEl) barEl.style.width = `${percent}%`;
+}
+
+// สั่งให้ Splash Screen ค่อยๆ จางหายไปเมื่อเตรียมระบบเสร็จสิ้น
+function dismissAdminSplashScreen() {
+  const splash = document.getElementById('admin-splash-screen');
+  if (!splash) return;
+  setAdminSplashProgress('พร้อมเข้าใช้งาน ✓', 100);
+  setTimeout(() => {
+    splash.classList.add('opacity-0', 'pointer-events-none');
+    setTimeout(() => splash.remove(), 500);
+  }, 350);
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   const badge = document.getElementById('admin-status-badge');
-  badge.textContent = 'กำลังตรวจสอบสิทธิ์...';
+  if (badge) badge.textContent = 'กำลังตรวจสอบสิทธิ์...';
+
+  setAdminSplashProgress('กำลังตรวจสอบสิทธิ์ผู้ดูแลระบบ...', 30);
 
   // 1. ตรวจสอบสิทธิ์ให้เสร็จสิ้นก่อน
   const isAuthed = await initAdminAuthentication();
   if (!isAuthed) {
     console.error('Admin Auth Failed');
+    setAdminSplashProgress('ไม่ได้รับอนุญาตให้เข้าใช้งาน ✕', 100);
     return; // หยุดการทำงาน ไม่ยิง request เปล่าไปหา server
   }
+
+  setAdminSplashProgress('กำลังตั้งค่าหน้าควบคุมและโมดูล...', 65);
 
   // 2. เมื่อได้ Token เรียบร้อยแล้ว จึงเริ่มโหลดข้อมูล
   setupNavigationTabs();
@@ -26,7 +49,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   initPromotionsModule();
   setupAssetUploads();
 
-  loadOrders();
+  setAdminSplashProgress('กำลังโหลดคำสั่งซื้อและแดชบอร์ด...', 85);
+  
+  // 3. โหลดออเดอร์พร้อมเรนเดอร์ตัวเลขบนแดชบอร์ด
+  try {
+    await loadOrders();
+  } catch (err) {
+    console.warn('Orders initial load warning:', err);
+  } finally {
+    // ปิด Splash Screen เมื่อข้อมูลพร้อมแสดงผล
+    dismissAdminSplashScreen();
+  }
 });
 
 async function initAdminAuthentication() {
@@ -50,8 +83,10 @@ async function initAdminAuthentication() {
       localStorage.setItem('artisan_admin_auth', `Bearer ${idToken}`);
 
       const profile = await liff.getProfile();
-      badge.textContent = `👤 ${profile.displayName}`;
-      badge.className = 'text-xs bg-emerald-950/60 border border-emerald-500/30 px-3 py-1 rounded-full text-emerald-400 font-mono';
+      if (badge) {
+        badge.textContent = `👤 ${profile.displayName}`;
+        badge.className = 'text-xs bg-emerald-950/60 border border-emerald-500/30 px-3 py-1 rounded-full text-emerald-400 font-mono';
+      }
       return true;
 
     } catch (e) {
@@ -69,12 +104,14 @@ async function initAdminAuthentication() {
   if (localKey) {
     setAdminAuthToken(localKey, 'Bearer');
     localStorage.setItem('artisan_admin_auth', `Bearer ${localKey}`);
-    badge.textContent = '🔑 Local Key';
-    badge.className = 'text-xs bg-stone-800 px-3 py-1 rounded-full text-amber-400 font-mono';
+    if (badge) {
+      badge.textContent = '🔑 Local Key';
+      badge.className = 'text-xs bg-stone-800 px-3 py-1 rounded-full text-amber-400 font-mono';
+    }
     return true;
   }
 
-  badge.textContent = '❌ Unauthorized';
+  if (badge) badge.textContent = '❌ Unauthorized';
   return false;
 }
 
