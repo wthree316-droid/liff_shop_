@@ -41,7 +41,8 @@ class PromosStateManager {
       const idx = this.promotions.findIndex(p => String(p.id) === String(editId));
       if (idx !== -1) this.promotions[idx] = { ...this.promotions[idx], ...updated };
     } else {
-      const created = await createAdminPromotion(payload);
+
+      const created = await createAdminPromotion({ ...payload, is_active: true });
       this.promotions.unshift(created);
     }
     return this.promotions;
@@ -56,7 +57,7 @@ class PromosStateManager {
     const min_order_amount = parseFloat(document.getElementById('promo-min').value) || 0;
     const maxVal = document.getElementById('promo-max').value;
     const max_discount_amount = maxVal ? parseFloat(maxVal) : null;
-    const banner_image_url = document.getElementById('promo-banner').value.trim();
+    const banner_image_url = document.getElementById('promo-banner').value.trim() || null;
 
     if (!title || isNaN(discount_value) || discount_value <= 0) {
       throw new Error('กรุณากรอกข้อมูลส่วนลดและชื่อแคมเปญให้ถูกต้อง');

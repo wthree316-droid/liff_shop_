@@ -4,8 +4,8 @@ export const CONFIG = {
   ADMIN_LIFF_ID: '2011466802-Gw5WHngi',      // LIFF ID สำหรับหน้า Admin
 
   CATEGORIES: [
-    { id: 'cat_weight', name: 'ชั่งกรัม', defaultType: 'BY_WEIGHT' },
-    { id: 'cat_pack',   name: 'แพ็ค',    defaultType: 'PER_PIECE' },
-    { id: 'cat_gear',   name: 'อุปกรณ์',  defaultType: 'PER_PIECE' }
+    { id: 'cat_weight', name: 'สมุนไพร', defaultType: 'BY_WEIGHT' },
+    { id: 'cat_pack',   name: 'อุปกรณ์',    defaultType: 'PER_PIECE' },
+    { id: 'cat_gear',   name: 'อื่นๆ',  defaultType: 'PER_PIECE' }
   ]
 };

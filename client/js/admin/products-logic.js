@@ -54,10 +54,13 @@ class ProductsStateManager {
     const variantsRaw = document.getElementById('prod-variants').value.trim();
     const variants = variantsRaw ? variantsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
 
-    const pricePerUnit = parseFloat(document.getElementById('prod-price').value);
-    if (isNaN(pricePerUnit) || pricePerUnit < 0) {
-      throw new Error('กรุณาระบุราคาต่อหน่วยให้ถูกต้อง');
+    // บรรทัดตรวจราคา: บังคับ > 0 เพื่อไม่ให้ชน Constraint ใน DB
+    const rawPrice = document.getElementById('prod-price').value.trim();
+    const pricePerUnit = parseFloat(rawPrice);
+    if (isNaN(pricePerUnit) || pricePerUnit <= 0) {
+      throw new Error('กรุณาระบุราคาให้ถูกต้อง (ต้องมากกว่า 0)');
     }
+
 
     let priceTiers = [];
     if (type === 'BY_WEIGHT') {
@@ -81,7 +84,7 @@ class ProductsStateManager {
         category_id: document.getElementById('prod-cat').value,
         type: type,
         price_per_unit: pricePerUnit,
-        image_url: document.getElementById('prod-image').value.trim() || '',
+        image_url: document.getElementById('prod-image').value.trim() || null,
         variants: variants,
         price_tiers: priceTiers
       }

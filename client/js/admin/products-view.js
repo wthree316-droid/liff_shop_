@@ -16,6 +16,7 @@ function syncProductTypeUI(type) {
   } else {
     tierContainer.classList.add('hidden');
     priceInput.placeholder = 'ราคาต่อชิ้น';
+    document.getElementById('tier-rows-list').innerHTML = ''; 
   }
 }
 
@@ -66,7 +67,7 @@ export function initProductsModule() {
       syncProductTypeUI('BY_WEIGHT');
     }
 
-    appendTierRow(25, '', '25g');
+    appendTierRow(25, 0, '25g');
     modalProduct.showModal();
   });
 
@@ -90,14 +91,18 @@ function updateProductImagePreview(imageUrl) {
 
   if (!imgEl || !placeholderEl) return;
 
-  if (imageUrl) {
+  if (imageUrl && imageUrl.trim() !== '') {
     imgEl.src = imageUrl;
     imgEl.classList.remove('hidden');
+    imgEl.style.display = 'block';
     placeholderEl.classList.add('hidden');
+    placeholderEl.style.display = 'none';
   } else {
     imgEl.src = '';
     imgEl.classList.add('hidden');
+    imgEl.style.display = 'none';
     placeholderEl.classList.remove('hidden');
+    placeholderEl.style.display = 'block';
   }
 }
 
@@ -268,8 +273,9 @@ function handleOpenEditProduct(productId) {
   document.getElementById('prod-image').value = prod.image_url || '';
   document.getElementById('prod-variants').value = Array.isArray(prod.variants) ? prod.variants.join(', ') : '';
 
-  // แสดงรูปภาพเดิมของสินค้านี้
-  updateProductImagePreview(prod.image_url || '');
+  const currentImg = prod.image_url || prod.image || '';
+  document.getElementById('prod-image').value = currentImg;
+  updateProductImagePreview(currentImg);
 
   const rowsList = document.getElementById('tier-rows-list');
   rowsList.innerHTML = '';

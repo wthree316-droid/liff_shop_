@@ -60,22 +60,24 @@ async def verify_admin_auth(authorization: Optional[str] = Header(None)):
 
 # --- Upload Image Endpoint ---
 @router.post("/upload", dependencies=[Depends(verify_admin_auth)])
-async def upload_asset_image(file: UploadFile = File(...)):
+async def upload_asset_image(
+    file: UploadFile = File(...),
+    bucket: Optional[str] = "products"
+):
     raw_name = file.filename or "image.jpg"
-    # ดึงนามสกุลไฟล์ และบังคับแปลงเป็นตัวพิมพ์เล็ก
     ext = raw_name.split(".")[-1].lower() if "." in raw_name else "jpg"
-    # สุ่ม UUIDv4 เพื่อป้องกันชื่อซ้ำและตัดอักขระภาษาไทย/ช่องว่างทิ้ง
     unique_filename = f"{uuid.uuid4().hex}.{ext}"
     file_bytes = await file.read()
 
-    # ต้องส่ง unique_filename เข้า path ของ Supabase Storage
-    supabase.storage.from_("products").upload(
+    target_bucket = bucket if bucket in ["products", "promotions"] else "products"
+
+    supabase.storage.from_(target_bucket).upload(
         path=unique_filename,
         file=file_bytes,
         file_options={"content-type": file.content_type or "image/jpeg"}
     )
 
-    public_url = supabase.storage.from_("products").get_public_url(unique_filename)
+    public_url = supabase.storage.from_(target_bucket).get_public_url(unique_filename)
     return {"image_url": public_url}
 
 # --- Orders Endpoints ---
