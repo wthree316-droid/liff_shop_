@@ -10,6 +10,7 @@ from modules.promotion.router import router as promotion_router
 from modules.setting.router import router as setting_router
 from modules.webhook.router import router as webhook_router
 from modules.admin.router import router as admin_router
+from modules.redirect.router import router as redirect_router
 
 app = FastAPI(
     title="Artisan Shop E-Commerce API",
@@ -33,6 +34,8 @@ app.include_router(promotion_router, prefix="/api")
 app.include_router(setting_router, prefix="/api")
 app.include_router(webhook_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
+app.include_router(redirect_router)
+
 
 @app.get("/health")
 def health_check():

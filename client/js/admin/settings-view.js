@@ -36,11 +36,22 @@ export async function loadSettings() {
   try {
     const { settingsMap, allowedList } = await settingsState.loadFromApi();
     populateBankForm(settingsMap);
+    populateUrlForm(settingsMap); // ✓ เติมจุดนี้เพื่อให้ดึง URL เก่ามาแสดง
     renderThresholdsList(allowedList);
     initSettingsEvents();
   } catch (err) {
     container.innerHTML = `<div class="bg-white p-6 rounded-3xl border border-red-200 text-center text-red-500 text-xs">${err.message}</div>`;
   }
+}
+
+function populateUrlForm(map) {
+  const groupInput = document.getElementById('setting-url-group');
+  const fbInput = document.getElementById('setting-url-facebook');
+  const mapsInput = document.getElementById('setting-url-maps');
+
+  if (groupInput) groupInput.value = map['url_group'] || '';
+  if (fbInput) fbInput.value = map['url_facebook'] || '';
+  if (mapsInput) mapsInput.value = map['url_maps'] || '';
 }
 
 function renderThresholdsList(activeSettings) {
@@ -123,33 +134,35 @@ function initSettingsEvents() {
 
   // 1. จัดการบันทึกค่าเกณฑ์ต่างๆ
   const container = document.getElementById('settings-list');
-  container.addEventListener('click', async (e) => {
-    const btn = e.target.closest('.btn-save-setting');
-    if (!btn) return;
+  if (container) {
+    container.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.btn-save-setting');
+      if (!btn) return;
 
-    const key = btn.dataset.key;
-    const input = document.getElementById(`input-set-${key}`);
-    const val = parseFloat(input.value);
-    
-    if (isNaN(val) || val < 0) {
-      showAdminToast('กรุณากรอกตัวเลขที่ถูกต้องและไม่ติดลบ', 'error');
-      return;
-    }
+      const key = btn.dataset.key;
+      const input = document.getElementById(`input-set-${key}`);
+      const val = parseFloat(input.value);
+      
+      if (isNaN(val) || val < 0) {
+        showAdminToast('กรุณากรอกตัวเลขที่ถูกต้องและไม่ติดลบ', 'error');
+        return;
+      }
 
-    const originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = '...';
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '...';
 
-    try {
-      await settingsState.updateSingleSetting(key, val);
-      showAdminToast(`บันทึก ${ALLOWED_SETTINGS[key]?.title || key} สำเร็จ`);
-    } catch (err) {
-      showAdminToast(`บันทึกล้มเหลว: ${err.message}`, 'error');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = originalText;
-    }
-  });
+      try {
+        await settingsState.updateSingleSetting(key, val);
+        showAdminToast(`บันทึก ${ALLOWED_SETTINGS[key]?.title || key} สำเร็จ`);
+      } catch (err) {
+        showAdminToast(`บันทึกล้มเหลว: ${err.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    });
+  }
 
   // 2. อัปโหลดรูป QR Code พร้อมสถานะ Preview
   const qrFileInput = document.getElementById('setting-qr-file');
@@ -204,6 +217,40 @@ function initSettingsEvents() {
       } finally {
         btnSaveBank.disabled = false;
         btnSaveBank.textContent = originalBtnText;
+      }
+    });
+  }
+
+  // 4. บันทึกลิงก์ภายนอก (Redirect Links) ✓ นำเข้ามาไว้ในนี้
+  const btnSaveUrls = document.getElementById('btn-save-url-settings');
+  if (btnSaveUrls) {
+    btnSaveUrls.addEventListener('click', async () => {
+      const urlGroup = document.getElementById('setting-url-group').value.trim();
+      const urlFacebook = document.getElementById('setting-url-facebook').value.trim();
+      const urlMaps = document.getElementById('setting-url-maps').value.trim();
+
+      const validate = (url) => !url || url.startsWith('http://') || url.startsWith('https://');
+      if (!validate(urlGroup) || !validate(urlFacebook) || !validate(urlMaps)) {
+        showAdminToast('URL ต้องขึ้นต้นด้วย http:// หรือ https://', 'error');
+        return;
+      }
+
+      const originalBtnText = btnSaveUrls.textContent;
+      btnSaveUrls.disabled = true;
+      btnSaveUrls.textContent = 'กำลังบันทึก...';
+
+      try {
+        await settingsState.saveUrlSettings({
+          url_group: urlGroup,
+          url_facebook: urlFacebook,
+          url_maps: urlMaps
+        });
+        showAdminToast('บันทึกลิงก์โซเชียล & แผนที่ เรียบร้อยแล้ว');
+      } catch (err) {
+        showAdminToast(`บันทึกล้มเหลว: ${err.message}`, 'error');
+      } finally {
+        btnSaveUrls.disabled = false;
+        btnSaveUrls.textContent = originalBtnText;
       }
     });
   }

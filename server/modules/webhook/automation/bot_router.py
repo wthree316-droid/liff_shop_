@@ -33,6 +33,42 @@ async def dispatch_text_message(user_id: str, reply_token: str, text: str):
                 summary_lines = [f"• #{r['id'][:6]} ({r['customer_name']}) - ฿{float(r['grand_total']):.2f} [{r['status']}]" for r in rows]
                 await send_reply_message(reply_token, "📋 ออเดอร์ที่ต้องจัดการ:\n" + "\n".join(summary_lines))
             return
+        
+        if msg in ["#manage_urls", "จัดการ URL"]:
+            res = supabase.table("store_settings").select("key, value, description").in_("key", ["url_group", "url_facebook", "url_maps"]).execute()
+            
+            # ใช้ cast เพื่อระบุประเภทข้อมูลให้ Type Checker รู้ว่าเป็น List ของ Dict
+            raw_data = cast(List[Dict[str, Any]], res.data or [])
+            rows = {r["key"]: r for r in raw_data}
+            
+            label_map = [
+                ("url_group", "กลุ่มร้านค้า", "group"),
+                ("url_facebook", "แฟนเพจเฟซบุ๊ก", "facebook"),
+                ("url_maps", "Google Maps", "maps")
+            ]
+            
+            lines = ["🔗 การตั้งค่าลิงก์ปัจจุบัน:"]
+            for key, label, alias in label_map:
+                row_item = rows.get(key)
+                val = row_item.get("value", "-") if row_item else "-"
+                lines.append(f"\n• {label} ({alias}):\n  {val}")
+                
+            lines.append("\n✏️ วิธีแก้ไข พิมพ์คำสั่ง เช่น:\n/set group https://...")
+            await send_reply_message(reply_token, "\n".join(lines))
+            return
+
+        # เพิ่มใน bot_router_4.py ภายใต้ if is_admin:
+        if msg in ["#admin_help", "ช่วยเหลือ"]:
+            help_text = (
+                "📖 [คู่มือคำสั่งแอดมิน]\n\n"
+                "1. #admin_pending_orders : ดูออเดอร์ค้างส่ง/รอตรวจสลิป\n"
+                "2. #manage_urls : ดูและตรวจสอบลิงก์ทางผ่านทั้งหมด\n"
+                "3. /set <group|facebook|maps> <URL> : เปลี่ยน URL ทางผ่านทันที\n"
+                "4. #switch_to_customer : สลับเมนูกลับเป็นของลูกค้า\n"
+                "5. #admin : สลับกลับมาใช้เมนูแอดมิน"
+            )
+            await send_reply_message(reply_token, help_text)
+            return
 
     # 2. เช็กสถานะคำสั่งซื้อ
     if any(k in msg for k in ["เช็กสถานะ", "สถานะออเดอร์", "พัสดุ", "ติดตาม"]):

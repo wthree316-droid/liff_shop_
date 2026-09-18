@@ -19,4 +19,6 @@ class Settings:
     LINE_CUSTOMER_RICH_MENU_ID: str = os.getenv("LINE_CUSTOMER_RICH_MENU_ID", "").strip()
     LINE_ADMIN_RICH_MENU_ID: str = os.getenv("LINE_ADMIN_RICH_MENU_ID", "").strip()
 
+    CONTACT_URL: str = os.getenv("CONTACT_URL", "").strip().rstrip("/")
+
 settings = Settings()

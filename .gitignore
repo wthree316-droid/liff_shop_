@@ -8,6 +8,7 @@ venv/
 .venv/
 doc/
 
+cf.log
 # bin is used for virtualenv on Windows
 __pycache__/
 .pytest_cache/

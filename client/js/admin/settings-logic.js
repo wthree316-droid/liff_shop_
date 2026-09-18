@@ -8,6 +8,12 @@ export const ALLOWED_SETTINGS = {
   cod_deposit_fee: { title: 'ค่ามัดจำส่ง COD (ไป-กลับ)', unit: 'บาท', desc: 'ยอดเงินที่ลูกค้าต้องโอนมัดจำทันทีเมื่อเลือกเก็บเงินปลายทาง' }
 };
 
+export const URL_SETTINGS = {
+  url_group: { title: 'ลิงก์กลุ่มร้านค้า', desc: 'เช่น ลิงก์เชิญเข้า Facebook Group หรือ Line Square', placeholder: 'https://facebook.com/groups/...' },
+  url_facebook: { title: 'ลิงก์แฟนเพจ Facebook', desc: 'หน้าเพจหลักสำหรับให้ลูกค้ากดติดตาม', placeholder: 'https://facebook.com/...' },
+  url_maps: { title: 'ลิงก์ Google Maps', desc: 'หมุดที่ตั้งของหน้าร้าน', placeholder: 'https://maps.app.goo.gl/...' }
+};
+
 class SettingsStateManager {
   constructor() {
     this.settingsMap = {};
@@ -45,6 +51,13 @@ class SettingsStateManager {
   async uploadQrImage(file) {
     const res = await uploadAdminAsset(file);
     return res.image_url;
+  }
+
+  async saveUrlSettings(urlPayload) {
+    const promises = Object.entries(urlPayload).map(([key, val]) => 
+      this.updateSingleSetting(key, val)
+    );
+    await Promise.all(promises);
   }
 }
 

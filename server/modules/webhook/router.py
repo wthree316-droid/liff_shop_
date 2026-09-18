@@ -76,6 +76,20 @@ async def handle_text_event(event: dict):
     if user_id and reply_token and text:
         await dispatch_text_message(user_id, reply_token, text)
 
+# เพิ่มต่อจาก handle_text_event ใน router.py
+async def handle_follow_event(event: dict):
+    reply_token = event.get("replyToken")
+    if not reply_token:
+        return
+
+    welcome_text = (
+        "ยินดีต้อนรับสู่ Smoke Weed ครับ! ✨\n\n"
+        "คุณลูกค้าสามารถเลือกชมสินค้า สั่งซื้อสินค้าออนไลน์ "
+        "หรือตรวจสอบสถานะคำสั่งซื้อได้สะดวกรวดเร็วผ่านเมนูด้านล่างได้ทันทีเลยครับ 👇"
+    )
+    await send_reply_message(reply_token, welcome_text)
+
+
 @router.post("/line", status_code=status.HTTP_200_OK)
 async def line_webhook(
     request: Request,
@@ -91,11 +105,18 @@ async def line_webhook(
     events = payload.get("events", [])
 
     for event in events:
-        if event.get("type") == "message":
+        event_type = event.get("type")
+        
+        # 1. ข้อความแชท หรือรูปสลิป
+        if event_type == "message":
             msg_type = event.get("message", {}).get("type")
             if msg_type == "image":
                 background_tasks.add_task(handle_slip_event, event)
             elif msg_type == "text":
                 background_tasks.add_task(handle_text_event, event)
+                
+        # 2. เพิ่มเงื่อนไขลูกค้ากดเพิ่มเพื่อนใหม่ตรงนี้
+        elif event_type == "follow":
+            background_tasks.add_task(handle_follow_event, event)
 
     return {"status": "success"}
